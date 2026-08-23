@@ -285,48 +285,69 @@ toolbarbutton,
 }
 
 /* -------------------------------------------------------------------------
-   Auto-hide nav bar when more than one tab is open
+   Auto-hide nav bar - overlays the page instead of pushing it down
    ------------------------------------------------------------------------- */
+
+/* Take the nav bar out of the toolbox's flow: the toolbox then only reserves
+   the tab bar's height, and the nav bar paints on top of the page content
+   instead of displacing it.
+
+   z-index is the load-bearing part. Firefox ranks the browser areas with
+   --browser-area-z-index-*: the toolbox is 0 while the content area
+   (#tabbrowser-tabbox) is 2, the sidebar splitter 3 and expand-on-hover 4.
+   Anything <= 2 leaves the overlaid nav bar painted BEHIND the page - only
+   the urlbar stays visible, because an expanded urlbar renders in the top
+   layer and ignores stacking order. 5 puts the whole bar above all of them.
+
+   overflow: the toolbox is a .chrome-block, which Nova clips (overflow: clip)
+   for its rounded corners; that would clip away the out-of-flow nav bar. */
+#navigator-toolbox {
+    position: relative !important;
+    z-index: 5 !important;
+    overflow: visible !important;
+}
+
+#nav-bar {
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 2 !important;
+    /* .browser-toolbar is background-color: transparent - the toolbox used to
+       paint behind it. Out of flow it has to paint its own, or the page shows
+       straight through it. */
+    background-color: var(--toolbar-background-color, var(--toolbox-background-color, Field)) !important;
+    color: var(--toolbar-text-color, inherit) !important;
+}
 
 /* The urlbar promotes itself to its own compositor layer
    (will-change: translate); that layer can leave a stale unclickable copy
-   behind when the toolbar is clipped/faded. Force it back into normal
-   painting so it disappears with the rest of the nav bar. */
+   behind when the toolbar is faded out. Force it back into normal painting
+   so it disappears with the rest of the nav bar. */
 #nav-bar .urlbar {
     will-change: auto !important;
 }
 
-/* Collapsed = >1 tab AND not hovering toolbox AND nothing focused inside
+/* Hidden = not hovering the toolbox AND nothing focused inside the nav bar
    AND none of its own menus/panels currently open.
-   The hidden styles live in the keyframes; the 0s-duration animation with
-   a 200ms delay keeps everything visible during the grace period and applies
-   them all at once, fully synced. */
-@keyframes uc-navbar-collapse {
-    to {
-        position: relative;
-        min-height: 0;
-        max-height: 0;
-        padding-block: 0;
-        border: 0;
-        overflow: hidden;
-        opacity: 0;
-        pointer-events: none;
-    }
-}
-
+   500ms grace period, then a 200ms fade out. pointer-events flips only once
+   the fade has finished, so the bar stays clickable while it is still
+   visible. Opacity, NOT display/visibility: display:none would make the
+   urlbar unfocusable, which breaks the automatic focus a new tab gives it -
+   opacity keeps it focusable so :focus-within can kick in and reveal it. */
 #navigator-toolbox:not(:hover)
     #nav-bar:not(:focus-within):not(:has([open])) {
-    animation: uc-navbar-collapse 0s linear 200ms forwards !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition:
+        opacity 200ms ease 500ms,
+        pointer-events 0s linear 700ms !important;
 }
 
-/* While collapsed, neutralize every rendering mode the urlbar can escape
-   with - using opacity, NOT display:none:
+/* While hidden, neutralize every rendering mode the urlbar can escape with:
    - :popover-open -> expanded urlbar lives in the top layer, which ignores
      ancestor clipping/opacity entirely (this is the "ghost")
-   - [breakout] -> absolutely positioned breakout copy
-   display:none would make the urlbar unfocusable, which breaks the
-   automatic focus a new tab gives the urlbar; opacity keeps it focusable
-   so :focus-within can kick in and reveal it. */
+   - [breakout] -> absolutely positioned breakout copy */
 #navigator-toolbox:not(:hover)
     #nav-bar:not(:focus-within):not(:has([open]))
     .urlbar:popover-open,
@@ -336,12 +357,12 @@ toolbarbutton,
     opacity: 0 !important;
     pointer-events: none !important;
     transition:
-        opacity 0s linear 200ms,
-        pointer-events 0s linear 200ms !important;
+        opacity 200ms ease 500ms,
+        pointer-events 0s linear 700ms !important;
 }
 
-/* Revealed (hover or focus) = pushes page content down. Instant - cancels
-   the grace period above when it's still running. */
+/* Revealed (hover or focus) = fades in over the page, no delay, which also
+   cancels the grace period above when it is still running. */
 #navigator-toolbox:hover
     #nav-bar,
 #navigator-toolbox:not(:hover)
@@ -350,14 +371,9 @@ toolbarbutton,
    on the anchoring button/menu, urlbar gets [open] while results show) */
 #navigator-toolbox
     #nav-bar:has([open]) {
-    min-height: 0 !important;
-    max-height: none !important;
     opacity: 1 !important;
     pointer-events: auto !important;
-    animation: none !important;
     transition:
-        max-height 0s linear 0s,
-        opacity 0s linear 0s,
-        padding-block 0s linear 0s,
+        opacity 150ms ease 0s,
         pointer-events 0s linear 0s !important;
 }
