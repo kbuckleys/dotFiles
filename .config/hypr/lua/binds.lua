@@ -18,11 +18,6 @@ hl.bind("SUPER + CONTROL + P",     hl.dsp.exec_cmd("hyprpicker -a"))
 hl.bind("SUPER + E",               hl.dsp.exec_cmd(fman))
 hl.bind("SUPER + B",               hl.dsp.exec_cmd(web))
 
-hl.bind("SUPER + SHIFT + H", function()
-    hl.clear_crashed_lockscreen()
-    hl.exec_cmd("hyprlock")
-end, { locked = true })
-
 -- QS
 hl.bind("SUPER + ESCAPE",     hl.dsp.exec_cmd("qs ipc call Erebus toggle"))
 hl.bind("SUPER + SPACE",      hl.dsp.exec_cmd("qs ipc call Runner toggle"))
@@ -35,6 +30,7 @@ hl.bind("SUPER + V",          hl.dsp.exec_cmd("qs ipc call Vault toggle"))
 hl.bind("SUPER + K",          hl.dsp.exec_cmd("qs ipc call Hitman toggle"))
 hl.bind("SUPER + D",          hl.dsp.exec_cmd("qs ipc call Lexi toggle"))
 hl.bind("SUPER + SHIFT + D",  hl.dsp.exec_cmd("qs ipc call Lexi translate"))
+hl.bind("SUPER + SHIFT + B",  hl.dsp.exec_cmd("qs ipc call Picasso toggle"))
 
 -- spoot
 hl.bind("SUPER + M",          hl.dsp.exec_cmd("~/Projects/spoot/bin/spoot"))
