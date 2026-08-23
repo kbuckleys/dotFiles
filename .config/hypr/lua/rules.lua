@@ -18,10 +18,6 @@ hl.window_rule({ match = { class = "mpv" },                               float 
 hl.window_rule({ match = { fullscreen = true },  border_color = "#fab38799", border_size = 2, rounding = 5 })
 hl.window_rule({ match = { float = true },       border_color = "#b6e0a499", border_size = 2, rounding = 5 })
 
--- DISABLE SHADOWS FOR TILES
-hl.window_rule({ match = { float = false }, no_shadow = true })
-hl.window_rule({ match = { class = "^$" }, no_shadow = false })
-
 -- LAYERS
 hl.layer_rule({ match = { namespace = ".*" }, blur = true, ignore_alpha = 0.5 })
 

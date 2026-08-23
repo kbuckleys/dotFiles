@@ -1,22 +1,22 @@
 [[plugin.deps]]
 use = "yazi-rs/plugins:mount"
-rev = "0be29a9"
+rev = "044c3cc"
 hash = "46cbdc05596a3ecd730b288e28c7079d"
 
 [[plugin.deps]]
 use = "yazi-rs/plugins:chmod"
-rev = "0be29a9"
-hash = "5b1c276b75cae91cbbdbe7863f39a540"
+rev = "044c3cc"
+hash = "87472b05a8c420100f6a2b9cde1e7746"
 
 [[plugin.deps]]
 use = "WhoSowSee/whoosh"
-rev = "0abb062"
-hash = "b6591514a6ef4ae721d8807f7bf641ff"
+rev = "43f3202"
+hash = "da14dfe482886e756150ae4f5c2bb23"
 
 [[plugin.deps]]
 use = "KKV9/compress"
-rev = "e60e122"
-hash = "fbaf0adc8efc59555b748d36aab62d40"
+rev = "80e5268"
+hash = "868db729374b97871bc30b96d0e9061f"
 
 [flavor]
 deps = []

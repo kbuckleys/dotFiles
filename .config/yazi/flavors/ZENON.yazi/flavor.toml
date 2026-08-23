@@ -17,7 +17,6 @@ marker_cut = { bg = "#e78284" }
 count_copied = { fg = "#000000", bg = "#b6e0a4" }
 count_cut = { fg = "#000000", bg = "#e78284" }
 count_selected = { fg = "#000000", bg = "#e0d8a4" }
-border_style = { fg = "#000000" }
 
 [tabs]
 active = { bg = "#9bbfbf", fg = "#000000" }

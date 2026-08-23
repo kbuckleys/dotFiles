@@ -1,2 +1,6 @@
 [flavor]
 dark = "ZENON"
+
+[mgr]
+border_symbol = " "
+border_style = { fg = "reset" }
