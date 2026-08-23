@@ -8,6 +8,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
 import Quickshell.Wayland
+import "../morpheus"
 
 PanelWindow {
   id: popup
@@ -16,6 +17,13 @@ PanelWindow {
 
   property bool shown: false
   property bool morphMode: false
+  // 0..1, driven by shell.qml, which owns the crossfade schedule: 0 until the
+  // pill's own row has finished clearing, then rising to 1 as the pill
+  // finishes taking this layer's shape
+  property real morphFade: 1
+  // Morphed, erebus fades in on the pill's clock rather than its own, and only
+  // once the morpheus row has finished clearing.
+  readonly property real contentFade: popup.morphMode ? popup.morphFade : (popup.shown ? 1 : 0)
   property string confirmId: ""
   property int sel: 0
 
@@ -56,7 +64,7 @@ PanelWindow {
     return popup.confirmId === "" ? 36 : 72;
   }
 
-  visible: bg.opacity > 0.01
+  visible: bg.opacity > 0.01 || popup.contentFade > 0.01
   color: "transparent"
   anchors { left: true; right: true; top: true; bottom: true }
   exclusionMode: ExclusionMode.Ignore
@@ -150,7 +158,7 @@ PanelWindow {
 
   Timer {
     id: resetOnClose
-    interval: 240          // just past the 200ms fade-out
+    interval: Zenon.slow + 60   // just past the fade-out
     onTriggered: {
       if (popup.shown) return;
       popup.confirmId = "";
@@ -187,8 +195,8 @@ PanelWindow {
     anchors.bottom: parent.bottom
     anchors.bottomMargin: popup.morphMode ? 6 : (popup.screen && popup.statusbar && popup.statusbar.screen && popup.screen.name === popup.statusbar.screen.name ? popup.statusbar.height : 0)
     height: popup.calcHeight()
-    // 220ms matches the pill's own height easing in shell.qml
-    Behavior on height { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+    // Zenon.slow is the pill's own height easing in shell.qml
+    Behavior on height { NumberAnimation { duration: Zenon.slow; easing.type: Zenon.ease } }
 
     Rectangle {
       id: bg
@@ -202,11 +210,17 @@ PanelWindow {
       border.width: 0
       clip: true
 
-      opacity: popup.shown ? 1 : 0
-      Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+      opacity: popup.contentFade
+      // the slide-up is the standalone entrance. Morphed, the pill has
+      // already travelled that distance, so a second slide reads as the panel
+      // detaching from the pill it is supposed to BE.
+      Behavior on opacity {
+        enabled: !popup.morphMode
+        NumberAnimation { duration: Zenon.slow; easing.type: Zenon.ease }
+      }
       transform: Translate {
-        y: popup.shown ? 0 : bg.height
-        Behavior on y { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+        y: (popup.morphMode || popup.shown) ? 0 : bg.height
+        Behavior on y { NumberAnimation { duration: Zenon.slow; easing.type: Zenon.ease } }
       }
 
       Item {
@@ -222,8 +236,8 @@ PanelWindow {
           visible: opacity > 0.01
           opacity: popup.confirmId === "" ? 1 : 0
           x: popup.confirmId === "" ? 0 : -12
-          Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-          Behavior on x { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+          Behavior on opacity { NumberAnimation { duration: Zenon.normal; easing.type: Zenon.ease } }
+          Behavior on x { NumberAnimation { duration: Zenon.normal; easing.type: Zenon.ease } }
 
           Grid {
             anchors.centerIn: parent
@@ -248,14 +262,14 @@ PanelWindow {
                   topRightRadius: index === 4 ? popup.outerRadius : 0
                   bottomLeftRadius: index === 0 ? popup.outerRadiusLow : 10
                   bottomRightRadius: index === 4 ? popup.outerRadiusLow : 10
-                  Behavior on color { ColorAnimation { duration: 140; easing.type: Easing.OutCubic } }
+                  Behavior on color { ColorAnimation { duration: Zenon.fast; easing.type: Zenon.ease } }
                 }
 
                 Text {
                   anchors.centerIn: parent
                   text: modelData.label
                   color: parent.selected ? popup.ink : popup.idleGlyph
-                  Behavior on color { ColorAnimation { duration: 140; easing.type: Easing.OutCubic } }
+                  Behavior on color { ColorAnimation { duration: Zenon.fast; easing.type: Zenon.ease } }
                   font.family: "JetBrainsMono Nerd Font Propo"
                   font.weight: Font.Bold
                   font.pixelSize: 18
@@ -282,8 +296,8 @@ PanelWindow {
           visible: opacity > 0.01
           opacity: popup.confirmId !== "" ? 1 : 0
           x: popup.confirmId !== "" ? 0 : 12
-          Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-          Behavior on x { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+          Behavior on opacity { NumberAnimation { duration: Zenon.normal; easing.type: Zenon.ease } }
+          Behavior on x { NumberAnimation { duration: Zenon.normal; easing.type: Zenon.ease } }
 
           Rectangle {
             width: parent.width + 2
@@ -329,14 +343,14 @@ PanelWindow {
                   radius: 0
                   bottomLeftRadius: index === 0 ? popup.outerRadiusLow : 0
                   bottomRightRadius: index === 1 ? popup.outerRadiusLow : 0
-                  Behavior on color { ColorAnimation { duration: 140; easing.type: Easing.OutCubic } }
+                  Behavior on color { ColorAnimation { duration: Zenon.fast; easing.type: Zenon.ease } }
                 }
 
                 Text {
                   anchors.centerIn: parent
                   text: modelData.label
                   color: index === popup.sel ? popup.ink : popup.idleGlyph
-                  Behavior on color { ColorAnimation { duration: 140; easing.type: Easing.OutCubic } }
+                  Behavior on color { ColorAnimation { duration: Zenon.fast; easing.type: Zenon.ease } }
                   font.family: "JetBrainsMono Nerd Font Propo"
                   font.weight: Font.Bold
                   font.pixelSize: 18

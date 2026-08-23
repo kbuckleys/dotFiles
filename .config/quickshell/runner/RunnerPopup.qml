@@ -9,6 +9,7 @@ import Quickshell.Io
 import Quickshell.Hyprland
 import Quickshell.Wayland
 import "runner.js" as Runner
+import "../morpheus"
 
 PanelWindow {
   id: popup
@@ -17,6 +18,17 @@ PanelWindow {
 
   property bool shown: false
   property bool morphMode: false
+  // 0..1, driven by shell.qml, which owns the crossfade schedule: 0 until the
+  // pill's own row has finished clearing, then rising to 1 as the pill
+  // finishes taking this layer's shape
+  property real morphFade: 1
+
+  property real showFactor: popup.shown ? 1 : 0
+  Behavior on showFactor { NumberAnimation { duration: Zenon.slow; easing.type: Zenon.ease } }
+  // Morphed, the handover is timed off the PILL's progress rather than this
+  // window's own showFactor, so the rows can't fade up over a morpheus row
+  // that is still on screen.
+  readonly property real contentFade: popup.morphMode ? popup.morphFade : popup.showFactor
   property string mode: "search"
   property string query: ""
   property var histLines: []
@@ -32,13 +44,32 @@ PanelWindow {
     { key: "Back", label: Runner.ICON_B + "  Back" },
   ]
 
-  visible: popup.morphMode ? popup.shown : bg.opacity > 0.01
+  // stay mapped through the whole morph-out, not just while `shown`:
+  // closeRunner() drops `shown` on frame one so the pill can start
+  // collapsing, but the rows still have to fade out on the way down
+  visible: popup.shown || popup.contentFade > 0.01 || popup.showFactor > 0.01
   color: "transparent"
   anchors { bottom: true }
-  implicitWidth: popup.contentWidth
+  // contentWidth is the target; liveWidth is the value actually on screen.
+  // The pill eases toward the same target on the same Zenon.slow curve,
+  // so easing here — rather than snapping the window and letting the
+  // background catch up inside it — is what keeps the rows sitting still
+  // relative to the pill they are painted on.
+  property real liveWidth: (popup.morphMode && popup.statusbar && popup.statusbar.width > 0)
+    ? popup.statusbar.width : popup.contentWidth
+  // Morphed, liveWidth already IS the pill's live animated width, so the two
+  // are locked frame-for-frame by construction. A Behavior on top of that
+  // would be a second easing chasing an easing source — guaranteed lag.
+  // Standalone there is no pill to follow, so the ease stays.
+  Behavior on liveWidth {
+    enabled: !popup.morphMode
+    NumberAnimation { duration: Zenon.slow; easing.type: Zenon.ease }
+  }
+  readonly property int liveWidthPx: Math.round(popup.liveWidth)
+  implicitWidth: popup.liveWidthPx
   implicitHeight: 32
-  margins.left: Math.max(0, ((popup.screen ? popup.screen.width : 1920) - popup.contentWidth) / 2)
-  margins.right: Math.max(0, ((popup.screen ? popup.screen.width : 1920) - popup.contentWidth) / 2)
+  margins.left: Math.max(0, ((popup.screen ? popup.screen.width : 1920) - popup.liveWidthPx) / 2)
+  margins.right: Math.max(0, ((popup.screen ? popup.screen.width : 1920) - popup.liveWidthPx) / 2)
   exclusionMode: ExclusionMode.Ignore
   focusable: true
 
@@ -58,22 +89,19 @@ PanelWindow {
 
 property var statusbar: null
 
+  // every rounded corner in the runner, in one place
+  readonly property real corner: 5
+
   property string processIcon: "\uEB7F"
   property string terminalIcon: "\uEA85"
 
-  onScreenChanged: popup.updateStacking()
-  function updateStacking() {
-    if (popup.morphMode) {
-      popup.margins.bottom = 6;
-      return;
-    }
-    const bar = popup.statusbar;
-    let h = 0;
-    if (bar && popup.screen && bar.screen && popup.screen.name === bar.screen.name) {
-      h = bar.height;
-    }
-    popup.margins.bottom = h;
-  }
+  // A binding, not an imperative call from openRunner(). openRunner() ran
+  // BEFORE `shown` flipped, so morphMode was still false when it fired and the
+  // morphed runner was stacked a bar-height above the pill it is supposed to
+  // be sitting inside. Every other layer already anchors this declaratively.
+  readonly property bool onPillScreen: popup.statusbar && popup.screen
+    && popup.statusbar.screen && popup.screen.name === popup.statusbar.screen.name
+  margins.bottom: popup.morphMode ? 6 : (popup.onPillScreen ? popup.statusbar.height : 0)
 
   Repeater {
     id: appLoader
@@ -161,6 +189,7 @@ property var statusbar: null
 
   function applyFilter() {
     popup.filtered = Runner.filterRows(popup.rows, popup.query);
+    fitTimer.restart();
     if (popup.sel >= popup.filtered.length) popup.sel = popup.filtered.length - 1;
     if (popup.sel < 0) popup.sel = 0;
     popup.followSelection();
@@ -266,7 +295,6 @@ property var statusbar: null
   }
 
   function openRunner() {
-    popup.updateStacking();
     popup.shown = true;
     popup.mode = "search";
     popup.query = "";
@@ -321,34 +349,80 @@ property var statusbar: null
   // after a filter narrows the model and the pill keeps the old width.
   readonly property real listW: list.contentWidth
   readonly property real pickerW: pickerList.contentWidth
+
+  // ── whole-row shrink-wrap ────────────────────────────────────────────────
+  // The strip ends on a row boundary rather than at the raw 1000px cap, so a
+  // row dropped for being sliced doesn't leave its slot behind as dead space.
+  //
+  // Measured imperatively rather than as a binding, and against the fixed cap
+  // rather than the live viewport: the pill's width is what the measurement
+  // decides, so a binding that read the viewport back would be a cycle
+  // (width -> which rows fit -> width). Evaluating once per change instead of
+  // iterating to a fixpoint makes that impossible.
+  readonly property real listCap: 1000 - inputBar.width
+  property real fittedListW: 0
+
+  function measureFit() {
+    const avail = popup.listCap;
+    const c = list.contentX;
+    let best = 0;
+    for (let i = 0; i < popup.filtered.length; ++i) {
+      const it = list.itemAtIndex(i);
+      if (!it) break;                    // beyond what the view has realised
+      const right = it.x + it.width - c;
+      if (right <= 0) continue;          // scrolled off to the left
+      if (right > avail) break;          // first row that would be sliced
+      best = right;
+    }
+    // a single row wider than the whole strip is shown clipped rather than
+    // collapsing the pill to nothing — moveSel already keeps it selected
+    return best > 0 ? best : Math.min(avail, list.contentWidth);
+  }
+
+  Timer {
+    id: fitTimer
+    interval: 0
+    onTriggered: popup.fittedListW = popup.measureFit()
+  }
+
+  Connections {
+    target: list
+    // contentWidth fires once the delegates for a new model are sized, which
+    // is the earliest point measureFit() can see real geometry
+    function onContentWidthChanged() { fitTimer.restart(); }
+    function onContentXChanged() { fitTimer.restart(); }
+  }
+  onListCapChanged: fitTimer.restart()
+
   property int contentWidth: {
-    if (popup.mode === "picker") return Math.min(1000, Math.ceil(popup.pickerW));
-    return Math.min(1000, Math.ceil(inputBar.width + popup.listW));
+    if (popup.mode === "picker") return Math.min(1000, Math.ceil(msgArea.width + popup.pickerW));
+    return Math.min(1000, Math.ceil(inputBar.width + popup.fittedListW));
   }
 
   Rectangle {
     id: bg
     anchors.fill: parent
-    // matches the morpheus pill's morphed radius
-    radius: 12
+    radius: popup.corner
     color: popup.morphMode ? "transparent" : "#b3000000"
     border.color: popup.morphMode ? "transparent" : "#20242a"
     border.width: 1
 
-    opacity: popup.shown ? 1 : 0
-    Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-    // the pill tracks contentWidth, so this must ease at the pill's rate
-    Behavior on width { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+    opacity: popup.morphMode ? 1 : popup.showFactor
     transform: Translate {
       id: spawnT
-      y: popup.shown ? 0 : bg.height
-      Behavior on y { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+      // the slide-up is the standalone entrance. Morphed, the pill has already
+      // travelled that distance and the panel IS the pill, so a second slide
+      // reads as the two coming apart.
+      y: popup.morphMode ? 0 : bg.height * (1 - popup.showFactor)
     }
 
     Item {
       id: content
       anchors.fill: parent
       clip: true
+      // only the morph needs a separate content fade; standalone, bg already
+      // carries the whole panel out and a second fade just muddies it
+      opacity: popup.morphMode ? popup.contentFade : 1
 
       Row {
         id: searchRow
@@ -356,8 +430,8 @@ property var statusbar: null
         visible: opacity > 0.01
         opacity: popup.mode === "search" ? 1 : 0
         x: popup.mode === "search" ? 0 : -24
-        Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-        Behavior on x { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+        Behavior on opacity { NumberAnimation { duration: Zenon.normal; easing.type: Zenon.ease } }
+        Behavior on x { NumberAnimation { duration: Zenon.normal; easing.type: Zenon.ease } }
 
         Rectangle {
           id: inputBar
@@ -370,7 +444,7 @@ property var statusbar: null
             : 0
           height: parent.height
           color: "transparent"
-          Behavior on width { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+          Behavior on width { NumberAnimation { duration: Zenon.normal; easing.type: Zenon.ease } }
 
           Row {
             anchors.fill: parent
@@ -449,10 +523,32 @@ property var statusbar: null
           cacheBuffer: 4000
 
           delegate: Item {
+            id: row
             required property var modelData
             required property int index
             width: rowText.implicitWidth + 24
             height: ListView.view.height
+
+            // Half an entry is worse than no entry, so anything not wholly
+            // inside the viewport is simply not painted — whether it is cut
+            // off by the 1000px cap or by the strip being scrolled. The slot
+            // itself stays, so scrolling and index maths are untouched.
+            // The selected row is always drawn: it is the one about to run,
+            // and an entry wider than the whole strip would otherwise vanish
+            // the moment you arrowed onto it.
+            readonly property real viewX: row.x - row.ListView.view.contentX
+            visible: row.index === popup.sel
+              || (row.viewX >= -0.5 && row.viewX + row.width <= row.ListView.view.width + 0.5)
+
+            // Corners follow the pill's edge, not the row's index. index 0 is
+            // not the left edge while the input bar is showing, and the last
+            // index stopped being the right edge as soon as a partial row
+            // could be dropped — so ask the geometry instead. A gap left by a
+            // dropped row means no row is in that corner, and none rounds.
+            readonly property bool atLeftEdge: row.visible
+              && inputBar.width < 0.5 && row.viewX <= 0.5
+            readonly property bool atRightEdge: row.visible
+              && row.viewX + row.width >= row.ListView.view.width - 0.5
 
             Rectangle {
               id: selRect
@@ -460,10 +556,10 @@ property var statusbar: null
               // erebus' rule: only the row that actually sits in a pill corner
               // rounds off, so the strip stays square-edged in the middle
               radius: 0
-              topLeftRadius: index === 0 ? 12 : 0
-              bottomLeftRadius: index === 0 ? 12 : 0
-              topRightRadius: index === popup.filtered.length - 1 ? 12 : 0
-              bottomRightRadius: index === popup.filtered.length - 1 ? 12 : 0
+              topLeftRadius: row.atLeftEdge ? popup.corner : 0
+              bottomLeftRadius: row.atLeftEdge ? popup.corner : 0
+              topRightRadius: row.atRightEdge ? popup.corner : 0
+              bottomRightRadius: row.atRightEdge ? popup.corner : 0
               color: index === popup.sel ? "#fab387" : "transparent"
             }
 
@@ -497,19 +593,25 @@ property var statusbar: null
         visible: opacity > 0.01
         opacity: popup.mode === "picker" ? 1 : 0
         x: popup.mode === "picker" ? 0 : -36
-        Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-        Behavior on x { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+        Behavior on opacity { NumberAnimation { duration: Zenon.normal; easing.type: Zenon.ease } }
+        Behavior on x { NumberAnimation { duration: Zenon.normal; easing.type: Zenon.ease } }
 
         Rectangle {
           id: msgArea
-          width: parent.width * 0.5
+          // shrink-wrap the echoed command instead of claiming a flat half of
+          // the pill: at 50% the three picker buttons were handed less width
+          // than they needed and the last one was cut off by the ListView clip.
+          // The cap is the point past which a very long command elides rather
+          // than pushing the buttons off the end.
+          width: Math.min(420, msgText.implicitWidth + 24)
           height: parent.height
           color: "transparent"
 
           Text {
+            id: msgText
             anchors.fill: parent
-            anchors.leftMargin: 8
-            anchors.rightMargin: 8
+            anchors.leftMargin: 12
+            anchors.rightMargin: 12
             text: popup.query
             color: "#fab387"
             font.family: "JetBrainsMono Nerd Font Propo"
@@ -540,11 +642,13 @@ property var statusbar: null
             Rectangle {
               id: pickerSelRect
               anchors.fill: parent
+              // erebus' rule — only a row that actually sits in a pill corner
+              // rounds off. Unlike the search strip, the picker never starts at
+              // the pill's left edge: msgArea holds that end, so index 0
+              // (Terminal) is a middle row and stays square.
               radius: 0
-              topLeftRadius: index === 0 ? 12 : 0
-              bottomLeftRadius: index === 0 ? 12 : 0
-              topRightRadius: index === popup.pickerRows.length - 1 ? 12 : 0
-              bottomRightRadius: index === popup.pickerRows.length - 1 ? 12 : 0
+              topRightRadius: index === popup.pickerRows.length - 1 ? popup.corner : 0
+              bottomRightRadius: index === popup.pickerRows.length - 1 ? popup.corner : 0
               color: index === popup.sel ? "#fab387" : "transparent"
             }
 

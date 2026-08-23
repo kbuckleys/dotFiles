@@ -46,10 +46,15 @@ QtObject {
   readonly property int gap:       8
   readonly property int padBar:    12
 
-  // shared motion timings so every module eases identically
-  readonly property int fast:   140
-  readonly property int normal: 180
-  readonly property int slow:   220
+  // ── motion ──
+  // Shared timings and curve, so every module and every layer eases
+  // identically. OutQuint rather than OutCubic: it puts more
+  // of the travel in the first third and lands softer, so the same move reads
+  // as both quicker off the mark and gentler on arrival.
+  readonly property int fast:   110
+  readonly property int normal: 140
+  readonly property int slow:   170
+  readonly property int ease:   Easing.OutQuint
 
   // unlit meter notch: the accent dimmed and mostly transparent, so a meter
   // reads as one colour whether its segments are lit or not

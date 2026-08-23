@@ -9,6 +9,7 @@ import Quickshell.Io
 import Quickshell.Hyprland
 import Quickshell.Wayland
 import "scout.js" as Scout
+import "../morpheus"
 
 PanelWindow {
   id: popup
@@ -17,6 +18,10 @@ PanelWindow {
 
   property bool shown: false
   property bool morphMode: false
+  // 0..1, driven by shell.qml, which owns the crossfade schedule: 0 until the
+  // pill's own row has finished clearing, then rising to 1 as the pill
+  // finishes taking this layer's shape
+  property real morphFade: 1
 
   property real showFactor: 0
   property bool collapsing: false
@@ -34,11 +39,11 @@ PanelWindow {
   readonly property real panelY: popup.morphMode ? popup.morphScaleY
     : (popup.collapsing ? 0.82 + 0.18 * popup.showFactor
                         : 0.90 + 0.10 * popup.showFactor)
-  // content trails the box: it only appears once the pill has real size, and
-  // clears well before the pill has finished collapsing
-  readonly property real contentFade: popup.morphMode
-    ? Math.max(0, Math.min(1, (popup.showFactor - 0.35) / 0.65))
-    : popup.showFactor
+  // Morphed, the handover is timed off the PILL's progress, not this popup's
+  // own showFactor: showFactor is OutCubic and front-loaded, so it crossed the
+  // threshold ~25ms in and this layer's content faded up on top of a morpheus
+  // row that was still 80% opaque.
+  readonly property real contentFade: popup.morphMode ? popup.morphFade : popup.showFactor
 
   property string query: ""
   property var entries: []
@@ -92,13 +97,13 @@ PanelWindow {
   NumberAnimation {
     id: openAnim
     target: popup; property: "showFactor"
-    to: 1; duration: 200; easing.type: Easing.OutCubic
+    to: 1; duration: Zenon.slow; easing.type: Zenon.ease
   }
 
   NumberAnimation {
     id: closeAnim
     target: popup; property: "showFactor"
-    to: 0; duration: 200; easing.type: Easing.OutCubic
+    to: 0; duration: Zenon.slow; easing.type: Zenon.ease
     onFinished: popup.shown = false
   }
 
@@ -307,9 +312,9 @@ PanelWindow {
     id: panel
     width: 1000
     height: popup.bodyH
-    // 220ms matches the pill's own height easing in shell.qml; if these drift
+    // Zenon.slow is the pill's own height easing in shell.qml; if these drift
     // apart the panel visibly detaches from its background mid-resize
-    Behavior on height { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+    Behavior on height { NumberAnimation { duration: Zenon.slow; easing.type: Zenon.ease } }
     anchors {
       horizontalCenter: parent.horizontalCenter
       bottom: parent.bottom
@@ -349,7 +354,7 @@ PanelWindow {
           visible: height > 0.5
           clip: true
           color: "transparent"
-          Behavior on height { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+          Behavior on height { NumberAnimation { duration: Zenon.normal; easing.type: Zenon.ease } }
 
           Row {
             anchors.fill: parent

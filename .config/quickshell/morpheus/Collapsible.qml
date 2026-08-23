@@ -22,7 +22,7 @@ Item {
   // or content-driven slot chase a moving target and rubber-band.
   property real factor: root.active ? 1 : 0
   Behavior on factor {
-    NumberAnimation { duration: Zenon.normal; easing.type: Easing.OutCubic }
+    NumberAnimation { duration: Zenon.normal; easing.type: Zenon.ease }
   }
 
   implicitWidth: root.openWidth * root.factor

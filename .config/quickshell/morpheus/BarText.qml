@@ -26,6 +26,6 @@ Text {
   // every module tints through BarText (usage thresholds, active/idle,
   // connected/disconnected), so easing here smooths all of them at once
   Behavior on color {
-    ColorAnimation { duration: Zenon.normal; easing.type: Easing.OutCubic }
+    ColorAnimation { duration: Zenon.normal; easing.type: Zenon.ease }
   }
 }

@@ -64,3 +64,10 @@ function giB(kb) {
 function format1f(v) {
   return v.toFixed(1);
 }
+
+// waybar-updates' tooltip is a header of per-source counts, a blank line, then
+// the package list. Only the list belongs in a notification body.
+function updateList(tip) {
+  const parts = (tip ?? "").split("\n\n");
+  return parts.length > 1 ? parts.slice(1).join("\n\n") : (tip ?? "");
+}

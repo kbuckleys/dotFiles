@@ -114,7 +114,7 @@ PanelWindow {
             radius: 3
             color: hover.containsMouse && !modelData.isSeparator ? Zenon.hoverTint : "transparent"
             Behavior on color {
-              ColorAnimation { duration: Zenon.fast; easing.type: Easing.OutCubic }
+              ColorAnimation { duration: Zenon.fast; easing.type: Zenon.ease }
             }
           }
 

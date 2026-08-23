@@ -43,7 +43,7 @@ PanelWindow {
   // visibility follows the factor rather than `show` directly
   property real showFactor: (popup.show && popup._win !== null) ? 1 : 0
   Behavior on showFactor {
-    NumberAnimation { duration: Zenon.fast; easing.type: Easing.OutCubic }
+    NumberAnimation { duration: Zenon.fast; easing.type: Zenon.ease }
   }
   visible: popup.showFactor > 0.01
 

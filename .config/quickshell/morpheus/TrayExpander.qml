@@ -64,10 +64,10 @@ Collapsible {
       spacing: 12
 
       Behavior on width {
-        NumberAnimation { duration: Zenon.normal; easing.type: Easing.OutCubic }
+        NumberAnimation { duration: Zenon.normal; easing.type: Zenon.ease }
       }
       Behavior on opacity {
-        NumberAnimation { duration: Zenon.normal; easing.type: Easing.OutCubic }
+        NumberAnimation { duration: Zenon.normal; easing.type: Zenon.ease }
       }
 
       Repeater {

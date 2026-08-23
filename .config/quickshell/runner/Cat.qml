@@ -5,6 +5,7 @@
 
 import QtQuick
 import Quickshell.Io
+import "../morpheus"
 
 Item {
   id: root
