@@ -238,6 +238,7 @@ end
 
 local DEPS = {
   { pkg = "fzf",            bin = "fzf",      why = "the interface itself" },
+  { pkg = "gawk",           bin = "gawk",     why = "the list formatter" },
   { pkg = "expac",          bin = "expac",    why = "package size columns" },
   { pkg = "pacman-contrib", bin = "paccache", why = "cache maintenance" },
 }
@@ -265,6 +266,19 @@ local function ensure_deps()
   end
   print("")
   sh("sudo pacman -S --needed --noconfirm " .. table.concat(names, " "))
+
+  -- Everything after this point -- the paru bootstrap menu included -- is
+  -- drawn by fzf, so a failed install here has to be said out loud rather
+  -- than left to surface as a run of empty selections.
+  local still = {}
+  for _, d in ipairs(missing) do
+    if not have(d.bin) then still[#still + 1] = d.pkg end
+  end
+  if #still > 0 then
+    print("")
+    print("  \027[1;31mStill missing: " .. table.concat(still, ", ") .. "\027[0m")
+    pause()
+  end
 end
 
 local function paru_installed()
@@ -526,31 +540,60 @@ fi
 -- Dispatches on what the row actually is instead of always reaching for
 -- `paru -Si`, which costs 250 ms for a repo package and 542 ms over the
 -- network for an AUR one -- on every cursor movement.
+--
+-- Every row now gets its real preview with no key press: the C-p "full
+-- details" binding is gone, and the network lookup it used to gate is
+-- cached on disk instead. Holding a cursor key down through the AUR
+-- section would otherwise open one request per row.
 local PREVIEW_SH = [==[
 #!/usr/bin/env bash
-# usage: preview.sh <pkg> <repo-tag> [full]
-pkg="$1"; repo="$2"; mode="${3:-quick}"
-pacman -Qi -- "$pkg" 2>/dev/null && exit 0
+# usage: preview.sh <pkg> [repo-tag]
+#   AUR     installed info, else the cached AUR record
+#   LOCAL   installed info only; the package is in no sync database
+#   UPDATE  sync-database info first: this list is about what is coming,
+#           not about the older version still on disk
+#   (other) installed, then sync database, then AUR
+pkg="$1"; repo="${2:-}"
+[ -n "$pkg" ] || exit 0
+
+# `paru -Si` is a network round trip. Cache it under the same directory the
+# row cache uses and reuse it for half a day; a package name cannot contain
+# a slash, so the name is the file name. Written via a temporary file so a
+# preview that fzf kills mid-flight cannot leave a truncated record behind.
+aur_info() {
+  local dir="$ZENU_CACHE_DIR/aur-si" f out
+  f="$dir/$1"
+  if [ -s "$f" ] && [ -z "$(find "$f" -mmin +720 2>/dev/null)" ]; then
+    cat "$f"
+    return 0
+  fi
+  mkdir -p "$dir" 2>/dev/null
+  if out=$(paru -Si -- "$1" 2>/dev/null) && [ -n "$out" ]; then
+    printf '%s\n' "$out" >"$f.$$" && mv -f "$f.$$" "$f"
+    printf '%s\n' "$out"
+  elif [ -s "$f" ]; then
+    # Stale, but offline or the AUR is unreachable: stale beats blank.
+    cat "$f"
+  else
+    printf '\033[35m%s\033[0m\n\nAUR package. Details are unavailable right now.\n' "$1"
+  fi
+}
+
 case "$repo" in
+  UPDATE)
+    pacman -Si -- "$pkg" 2>/dev/null || aur_info "$pkg"
+    ;;
   AUR)
-    if [ "$mode" = full ]; then
-      paru -Si -- "$pkg"
-    else
-      printf '\033[35m%s\033[0m\n\nAUR package (not installed).\n' "$pkg"
-      pb="$ZENU_CLONE/$pkg/PKGBUILD"
-      if [ -r "$pb" ]; then
-        printf '\n\033[2m--- cached PKGBUILD ---\033[0m\n'
-        cat "$pb"
-      else
-        printf '\nPress \033[1mC-p\033[0m for full AUR details (queries the network).\n'
-      fi
-    fi
+    pacman -Qi -- "$pkg" 2>/dev/null || aur_info "$pkg"
     ;;
   LOCAL)
-    printf '\033[97m%s\033[0m\n\nInstalled locally; not in any sync database.\n' "$pkg"
+    pacman -Qi -- "$pkg" 2>/dev/null ||
+      printf '\033[97m%s\033[0m\n\nInstalled locally; not in any sync database.\n' "$pkg"
     ;;
   *)
-    pacman -Si -- "$pkg" 2>/dev/null || printf 'No information available for %s.\n' "$pkg"
+    pacman -Qi -- "$pkg" 2>/dev/null ||
+      pacman -Si -- "$pkg" 2>/dev/null ||
+      aur_info "$pkg"
     ;;
 esac
 ]==]
@@ -639,8 +682,22 @@ local function human_bytes(n)
 end
 
 -- Apparent size of a directory tree, for reporting reclaimed space.
+--
+-- The sudo prefix is not optional book-keeping. pacman's interrupted
+-- download-* directories under /var/cache/pacman/pkg are mode 700 root, so
+-- an unprivileged du silently skips exactly the bytes the cache view exists
+-- to report -- "Remove stale download-* directories" always claimed it had
+-- freed 0B. Every caller that removes anything takes sudo first, so by the
+-- time the figure matters the credential is already there; -n keeps this
+-- from ever turning a measurement into a password prompt.
 local function dir_bytes(path)
-  return tonumber(trim(capture("du -sb " .. shq(path) .. " 2>/dev/null | cut -f1"))) or 0
+  local pre = sudo_ready and "sudo -n " or ""
+  return tonumber(trim(capture(
+    pre .. "du -sb " .. shq(path) .. " 2>/dev/null | cut -f1"))) or 0
+end
+
+local function dir_human(path)
+  return human_bytes(dir_bytes(path))
 end
 
 -- Wraps a list of package names to the terminal width.
@@ -942,6 +999,10 @@ local function history_view()
     "--info=hidden", "--height=60%", "--reverse", FZF_COLOR,
     "--bind", shq("esc:abort"),
     header_arg("RETURN Downgrade  󰇙  ESC Close", w),
+    -- Field 3 is the package name: the row is "<date> <tag> <pkg> <ver>"
+    -- and the log's timestamp is a single unbroken token.
+    "--preview", shq(env_prefix() .. PREVIEW_PATH .. " {3}"),
+    '--preview-window=bottom:50%,noinfo',
   }, " ")
   local sel = trim(fzf_list(entries, args))
   if sel == "" then return nil end
@@ -1014,7 +1075,7 @@ local function update_view()
           .. ",ctrl-u:execute-silent(echo manage > " .. SWITCH .. ")+abort"
           .. ",ctrl-t:execute-silent(echo maintain > " .. SWITCH .. ")+abort"),
         header_arg(header, w),
-        "--preview", shq("pacman -Si {1} 2>/dev/null || paru -Si {1}"),
+        "--preview", shq(env_prefix() .. PREVIEW_PATH .. " {1} UPDATE"),
         '--preview-window=bottom:50%,noinfo',
       }, " ")
 
@@ -1257,8 +1318,6 @@ else
 fi
 ]==], shq(P_ALL), shq(full_cmd), shq(P_INST), shq(inst_cmd)))
 
-    -- C-p is deliberately not listed: it only applies to AUR rows, and the
-    -- preview pane for those rows advertises it in place.
     local header = "TAB Flag  󰇙  C-a Invert  󰇙  C-s Installed  󰇙  C-u Update  󰇙  C-t Maintain  󰇙  RETURN Sync"
     local args = table.concat({
       "--multi", "--ansi", "--no-scrollbar",
@@ -1270,7 +1329,6 @@ fi
       -- binding after it. Not ctrl-m either: that is RETURN.
       "--bind", shq("esc:ignore,ctrl-a:toggle-all,ctrl-d:clear-multi"
         .. ",ctrl-s:transform(" .. toggle .. ")"
-        .. ",ctrl-p:change-preview(" .. env_prefix() .. PREVIEW_PATH .. " {2} {4} full)"
         .. ",ctrl-u:execute-silent(echo update > " .. SWITCH .. ")+abort"
         .. ",ctrl-t:execute-silent(echo maintain > " .. SWITCH .. ")+abort"),
       header_arg(header, w),
@@ -1335,6 +1393,28 @@ end
 
 -- maintenance view
 
+-- pacdiff falls back to `vim -d` (and only to `nvim -d` when EDITOR is
+-- exactly "nvim"), then dies if that binary is absent. ZENU used to force
+-- DIFFPROG=vimdiff, which is not shipped by any Arch package at all, so the
+-- action failed on every machine without a `vimdiff` in PATH. Pick the first
+-- viewer that is genuinely installed, and leave a user-set DIFFPROG alone.
+local DIFF_PROGS = {
+  { bin = "nvim",    cmd = "nvim -d" },
+  { bin = "vim",     cmd = "vim -d" },
+  { bin = "vimdiff", cmd = "vimdiff" },
+  { bin = "meld",    cmd = "meld" },
+  { bin = "kdiff3",  cmd = "kdiff3" },
+}
+
+local function diff_prog()
+  local env = os.getenv("DIFFPROG")
+  if env and trim(env) ~= "" then return env end
+  for _, d in ipairs(DIFF_PROGS) do
+    if have(d.bin) then return d.cmd end
+  end
+  return nil
+end
+
 local function maint_orphans()
   local orphans = lines_of(capture("pacman -Qtdq 2>/dev/null"))
   hard_clear()
@@ -1383,9 +1463,27 @@ local function maint_pacnew()
   print("")
   local choice = menu({ "Review them now (pacdiff)", "Back" }, 3)
   if choice == "Review them now (pacdiff)" then
+    local dp = diff_prog()
+    if not dp then
+      hard_clear()
+      print("  No diff viewer is installed.")
+      print("")
+      print("  Install one of nvim, vim, meld or kdiff3, or set DIFFPROG to")
+      print("  the viewer you want pacdiff to use.")
+      print("")
+      menu({ "Back" }, 2)
+      return "maintain"
+    end
     if not sudo_ensure() then return "maintain" end
     hard_clear()
-    sh("sudo -E DIFFPROG=${DIFFPROG:-vimdiff} pacdiff")
+    -- `pacdiff -s` is the supported way to run this from an unprivileged
+    -- shell: it reaches for sudo and sudoedit only for the files it actually
+    -- writes, rather than running the editor itself as root. The old call was
+    -- `sudo -E DIFFPROG=... pacdiff`, and a default sudoers refuses both -E
+    -- and a command-line variable assignment, so it never reached pacdiff.
+    -- sudo_ensure above is still worth it: it stops the password prompt from
+    -- landing in the middle of the merge.
+    sh("DIFFPROG=" .. shq(dp) .. " pacdiff -s")
     -- pacdiff edits files rather than packages, so there is nothing in the
     -- pacman log to summarise; report what is still outstanding instead.
     local left = lines_of(capture("pacdiff -o 2>/dev/null"))
@@ -1396,16 +1494,33 @@ local function maint_pacnew()
   return "maintain"
 end
 
+-- Number of interrupted download-* directories left in the package cache.
+local function stale_dirs()
+  return trim(capture("find " .. shq(PKG_CACHE)
+    .. " -maxdepth 1 -type d -name 'download-*' 2>/dev/null | wc -l"))
+end
+
+-- Bytes held by the cached package files, summed from find(1) rather than
+-- measured with du(1). du cannot descend into the mode-700 download-*
+-- directories, so it reports a "total" that silently omits them -- a wrong
+-- number on the one screen whose whole job is reporting sizes. The sum of
+-- the package files is exact without root, and the stale directories are
+-- reported next to it by count, which is also exact.
+local function pkg_cache_bytes()
+  return tonumber(trim(capture("find " .. shq(PKG_CACHE)
+    .. " -maxdepth 1 -name '*.pkg.tar.*' -printf '%s\\n' 2>/dev/null"
+    .. " | awk '{t += $1} END {print t + 0}'"))) or 0
+end
+
 local function maint_pkgcache()
   hard_clear()
-  local size    = trim(capture("du -sh " .. shq(PKG_CACHE) .. " 2>/dev/null | cut -f1"))
+  local size    = human_bytes(pkg_cache_bytes())
   local pkgs    = trim(capture("find " .. shq(PKG_CACHE) .. " -maxdepth 1 -name '*.pkg.tar.*' 2>/dev/null | wc -l"))
-  local stale   = trim(capture("find " .. shq(PKG_CACHE) .. " -maxdepth 1 -type d -name 'download-*' 2>/dev/null | wc -l"))
+  local stale   = stale_dirs()
 
   print("  Package cache: " .. PKG_CACHE)
   print("")
-  print(string.format("    total size            %s", size))
-  print(string.format("    cached packages       %s", pkgs))
+  print(string.format("    cached packages       %s, %s", pkgs, size))
   print(string.format("    stale download dirs   %s", stale))
   print("")
   print("  Stale download-* directories are left behind when a transaction is")
@@ -1421,22 +1536,27 @@ local function maint_pkgcache()
   if choice:match("^Keep 2") then
     if not sudo_ensure() then return "maintain" end
     hard_clear()
-    local before = dir_bytes(PKG_CACHE)
+    local before = pkg_cache_bytes()
     local ok = sh("sudo paccache -rk2")
     local after = trim(capture("find " .. shq(PKG_CACHE) .. " -maxdepth 1 -name '*.pkg.tar.*' 2>/dev/null | wc -l"))
     return summary_screen(nil, {
       { "Kept", after .. " package files (2 versions each)" },
-      { "Freed", human_bytes(math.max(0, before - dir_bytes(PKG_CACHE))) },
+      { "Freed", human_bytes(math.max(0, before - pkg_cache_bytes())) },
     }, ok)
   elseif choice:match("^Remove stale") then
     if not sudo_ensure() then return "maintain" end
     hard_clear()
     local before = dir_bytes(PKG_CACHE)
     local ok = sh("sudo find " .. shq(PKG_CACHE) .. " -maxdepth 1 -type d -name 'download-*' -exec rm -rf {} +")
+    -- Count again rather than reporting the figure from before the sweep: a
+    -- partial failure should say what is still sitting there.
+    local left = tonumber(stale_dirs()) or 0
+    local gone = math.max(0, (tonumber(stale) or 0) - left)
     return summary_screen(nil, {
-      { "Removed", stale .. " stale download directories" },
+      { "Removed", gone .. " stale download directories" },
       { "Freed", human_bytes(math.max(0, before - dir_bytes(PKG_CACHE))) },
-    }, ok)
+      left > 0 and { "Left", left .. " could not be removed" } or nil,
+    }, ok and left == 0)
   end
   return "maintain"
 end
@@ -1452,14 +1572,13 @@ local function maint_clonecache()
   end
 
   local inst = installed_set()
-  local rows, paths = {}, {}
+  local rows = {}
   for _, line in ipairs(lines_of(raw)) do
     local bytes, path = line:match("^(%d+)%s+(.+)$")
     if bytes then
       local name = path:gsub("/$", ""):match("([^/]+)$")
       local mark = inst[name] and "" or " (not installed)"
       rows[#rows + 1] = string.format("%8s  %s%s", human_bytes(bytes), name, mark)
-      paths[#paths + 1] = path
     end
   end
 
@@ -1470,6 +1589,9 @@ local function maint_clonecache()
     "--bind", shq("esc:abort,ctrl-a:toggle-all,ctrl-d:clear-multi"),
     "--accept-nth", "2",
     header_arg("TAB Flag  󰇙  C-a Invert  󰇙  RETURN Delete clone  󰇙  ESC Back", w),
+    -- Field 2 is the clone directory's name, which is the AUR package name.
+    "--preview", shq(env_prefix() .. PREVIEW_PATH .. " {2} AUR"),
+    '--preview-window=bottom:50%,noinfo',
   }, " ")
   local sel = fzf_list(rows, args)
   if trim(sel) == "" then return "maintain" end
@@ -1499,9 +1621,9 @@ local function maintenance_view()
 
     local orphans = trim(capture("pacman -Qtdq 2>/dev/null | wc -l"))
     local pacnew  = trim(capture("pacdiff -o 2>/dev/null | wc -l"))
-    local cache   = trim(capture("du -sh " .. shq(PKG_CACHE) .. " 2>/dev/null | cut -f1"))
-    local stale   = trim(capture("find " .. shq(PKG_CACHE) .. " -maxdepth 1 -type d -name 'download-*' 2>/dev/null | wc -l"))
-    local clones  = trim(capture("du -sh " .. shq(CLONE_DIR) .. " 2>/dev/null | cut -f1"))
+    local cache   = human_bytes(pkg_cache_bytes())
+    local stale   = stale_dirs()
+    local clones  = dir_human(CLONE_DIR)
 
     print("")
     local synced = trim(capture("stat -c %Y /var/lib/pacman/sync 2>/dev/null"))
@@ -1510,7 +1632,7 @@ local function maintenance_view()
     local items = {
       string.format("Orphaned packages          %s", orphans),
       string.format("Config files (.pacnew)     %s pending", pacnew),
-      string.format("Package cache              %s, %s stale download dirs", cache, stale),
+      string.format("Package cache              %s in packages, %s stale download dirs", cache, stale),
       string.format("AUR build clones           %s", clones),
       string.format("Sync package databases     %s", age and (age .. "h old") or "unknown"),
       "Package Manager",
@@ -1543,6 +1665,101 @@ local function maintenance_view()
   end
 end
 
+-- paru bootstrap
+
+-- ZENU is a front end to paru, so without it there is nothing to drive. The
+-- old code printed a git-clone incantation to copy by hand, which is exactly
+-- what ensure_deps() puts fzf on the system to avoid. Both packages build the
+-- same tool.
+local PARU_CHOICES = {
+  { pkg = "paru",     why = "latest tagged release" },
+  { pkg = "paru-git", why = "tracks git master" },
+}
+
+local function build_from_aur(pkg)
+  -- Built under the cache directory, not RUNDIR: /tmp is a tmpfs on a
+  -- default Arch install and a Rust build tree is big enough for that to
+  -- matter. Cleared before and after, so neither a failed build nor a
+  -- successful one leaves a tree for the next attempt to trip over.
+  local dir = CACHE_DIR .. "/build/" .. pkg
+  local function drop() sh("rm -rf " .. shq(dir)) end
+
+  drop()
+  if not sh("mkdir -p " .. shq(dir)) then
+    return false, "could not create " .. dir
+  end
+
+  print("  Cloning " .. pkg .. " from the AUR...")
+  if not sh("git clone --quiet --depth 1 https://aur.archlinux.org/"
+      .. pkg .. ".git " .. shq(dir)) then
+    drop()
+    return false, "could not clone " .. pkg
+  end
+
+  print("  Building " .. pkg .. ". This compiles Rust and takes a few minutes.")
+  print("")
+  -- makepkg refuses to run as root, so it is deliberately not run under
+  -- sudo. Its -i step calls sudo itself, and the keep-alive started by
+  -- sudo_ensure means that step does not stop to ask for a password again.
+  local ok = sh("cd " .. shq(dir) .. " && makepkg -si --noconfirm --needed")
+  drop()
+  if not ok then
+    return false, "the build failed -- scroll back for makepkg's output"
+  end
+  return true
+end
+
+local function install_paru()
+  local items = {}
+  for _, c in ipairs(PARU_CHOICES) do
+    items[#items + 1] = string.format("%-10s %s", c.pkg, c.why)
+  end
+  items[#items + 1] = "Quit"
+
+  hard_clear()
+  show_logo()
+  print("  paru is required and is not installed.")
+  print("  Pick the one to build:")
+  print("")
+
+  -- The choice is the row, so take the package name back off the front
+  -- rather than matching on the description text.
+  local pkg = menu(items, #items + 1):match("^(%S+)")
+  local wanted = false
+  for _, c in ipairs(PARU_CHOICES) do
+    if c.pkg == pkg then wanted = true end
+  end
+  if not wanted then return false end
+
+  if not sudo_ensure() then return false end
+  hard_clear()
+  show_logo()
+  print("  Installing build prerequisites...")
+  print("")
+  if not sh("sudo pacman -S --needed --noconfirm base-devel git") then
+    print("")
+    print("  \027[1;31mCould not install base-devel and git.\027[0m")
+    pause()
+    return false
+  end
+  print("")
+
+  local built, err = build_from_aur(pkg)
+  invalidate()
+
+  hard_clear()
+  show_logo()
+  if built and paru_installed() then
+    print("  \027[1;32m" .. pkg .. " installed.\027[0m")
+    pause()
+    return true
+  end
+  print("  \027[1;31mCould not install " .. pkg .. ": "
+    .. (err or "it is still not in the local database") .. "\027[0m")
+  pause()
+  return false
+end
+
 -- entry point
 
 local VIEWS = {
@@ -1554,17 +1771,13 @@ local VIEWS = {
 local function main()
   show_logo()
   ensure_deps()
-  if not paru_installed() then
-    hard_clear()
-    show_logo()
-    print("  paru is required and is not installed.")
-    print("  Install it with: sudo pacman -S --needed base-devel git && \\")
-    print("    git clone https://aur.archlinux.org/paru-git.git && cd paru-git && makepkg -si")
-    pause()
-    return
-  end
-  init_scripts()
+  -- Before the paru bootstrap, not after: install_paru() builds inside
+  -- RUNDIR, and sweep_stale() is what records this run's pid there. Without
+  -- it a second ZENU starting mid-build would see an unclaimed directory and
+  -- delete the tree out from under makepkg.
   sweep_stale()
+  if not paru_installed() and not install_paru() then return end
+  init_scripts()
   tty_setup()
   SWITCH = write_file(runpath("switch"), "")
   hard_clear()
