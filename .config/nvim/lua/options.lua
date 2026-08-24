@@ -7,7 +7,6 @@ vim.g.netrw_banner = 0
 vim.g.mapleader = " "
 vim.opt.fillchars = { eob = " ", vert = "│" }
 
-vim.opt.nu = true
 vim.opt.number = true
 vim.opt.relativenumber = true
 vim.opt.cursorline = true
@@ -20,7 +19,10 @@ vim.opt.expandtab = true
 vim.opt.wrap = true
 vim.opt.smartindent = true
 vim.opt.inccommand = "split"
-vim.opt.statuscolumn = "%=%l %s"
+
+-- A bare %l ignores 'relativenumber'. Mirror the built-in behaviour instead:
+-- relative distance everywhere, absolute number on the cursor line.
+vim.opt.statuscolumn = "%=%{v:relnum == 0 ? v:lnum : v:relnum} %s"
 
 vim.opt.splitbelow = true
 vim.opt.splitright = true
@@ -40,18 +42,24 @@ vim.opt.clipboard:append("unnamedplus")
 vim.opt.isfname:append("@-@")
 vim.opt.scrolloff = 8
 
-vim.opt.colorcolumn = "0"
 vim.opt.signcolumn = "yes"
 
 vim.opt.cmdheight = 0
 
--- Better Yazi borders
-vim.api.nvim_set_hl(0, "FloatBorder", { fg = "#20242a" })
+-- Consistent borders for LSP hover, diagnostics and other built-in floats.
+vim.opt.winborder = "single"
+
+-- Real alpha blending for the completion menu. See zenon.lua for the
+-- terminal-transparency side of this (bg = NONE groups).
+vim.opt.pumblend = 10
+
 require("yazi").setup({
   yazi_floating_window_border = "single"
 })
 
--- Command bar pushes the Statusline upwards instead of overlapping it
+-- Command bar pushes the Statusline upwards instead of overlapping it.
+-- Owns both messages and the cmdline: ext_messages implies ext_cmdline, which
+-- is why noice.nvim and mini.cmdline were removed rather than configured.
 require('vim._core.ui2').enable({
   enable = true,
   msg = {
@@ -65,13 +73,13 @@ require('vim._core.ui2').enable({
       timeout = 5000
     }
   }
-})   
+})
 
 -- Highlight yanked text
 vim.api.nvim_create_autocmd("TextYankPost", {
-    callback = function()
-        vim.hl.on_yank()
-    end
+  callback = function()
+    vim.hl.on_yank({ higroup = "YankHighlight", timeout = 200 })
+  end
 })
 
 -- Retain cursor position post-buffer closure
@@ -83,10 +91,4 @@ vim.api.nvim_create_autocmd("BufReadPost", {
       pcall(vim.api.nvim_win_set_cursor, 0, mark)
     end
   end
-})
-
-vim.api.nvim_create_autocmd("TextYankPost", {
-  callback = function()
-    vim.highlight.on_yank({ higroup = "YankHighlight", timeout = 200 })
-  end,
 })

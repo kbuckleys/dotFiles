@@ -3,87 +3,74 @@
 -- └─┘└─┘┘└┘└┴┘└─┘┴└─┴ ┴└─┘
 -- https://github.com/kbuckleys/
 
+local p = require("palette")
+
 vim.opt.termguicolors = true
 vim.opt.background = "dark"
 
-local term_colors = {
-  black           = "#000000",
-  lblack          = "#20242a",
-  red             = "#e78284",
-  green           = "#b6e0a4",
-  yellow          = "#fab387",
-  blue            = "#9fcbfc",
-  magenta         = "#c8a4e0",
-  cyan            = "#9bbfbf",
-  white           = "#dfdfdd",
-  bright_black    = "#6a707f",
-  bright_red      = "#eebebe",
-  bright_green    = "#b6e0a4",
-  bright_yellow   = "#e0d8a4",
-  bright_blue     = "#9fcbfc",
-  bright_magenta  = "#c8a4e0",
-  bright_cyan     = "#9bbfbf",
-  bright_white    = "#dfdfdd",
-}
+-- Transparency note: kitty applies 'background_opacity' only to cells using
+-- the terminal's *default* background. Any explicit bg is drawn fully opaque,
+-- so bg = "NONE" is the only way to let the 0.80 opacity through. Mode colour
+-- therefore lives in the foreground here instead of a filled block.
+local function mode(fg)
+  return {
+    a = { fg = fg, bg = "NONE", gui = "bold" },
+    b = { fg = p.white, bg = "NONE" },
+    c = { fg = p.bright_black, bg = "NONE" },
+  }
+end
 
 local zenon = {
-  normal = { 
-    c = { bg = "#20242a" },
-    a = { bg = "#20242a", gui = "bold" }
-  },
-  insert = { 
-    c = { fg = "#000000", bg = "#b6e0a4" },
-    a = { fg = "#000000", bg = "#b6e0a4", gui = "bold" }
-  },
-  visual = { 
-    c = { fg = "#000000", bg = "#c8a4e0" },
-    a = { fg = "#000000", bg = "#c8a4e0", gui = "bold" }
-  },
-  replace = {
-    c = { fg = "#000000", bg = "#e78284" },
-    a = { fg = "#000000", bg = "#e78284", gui = "bold" }
-  },
-  command = {
-    c = { fg = "#000000", bg = "#fab387" },
-    a = { fg = "#000000", bg = "#fab387", gui = "bold" }
-  },
-  inactive = {
-    c = { bg = "#000000" }, 
-    a = { bg = "#000000", gui = "bold" }
-  }
+  normal   = mode(p.white),
+  insert   = mode(p.green),
+  visual   = mode(p.magenta),
+  replace  = mode(p.red),
+  command  = mode(p.yellow),
+  inactive = mode(p.bright_black),
 }
 
 -- UI
-vim.api.nvim_set_hl(0, "YankHighlight", { fg = "#000000", bg = "#eebebe", nocombine = true })
-vim.api.nvim_set_hl(0, "Visual", { fg = "#000000", bg = "#c8a4e0", nocombine = true })
-vim.api.nvim_set_hl(0, "CursorLine", { bg = "#20242a", nocombine = true })
-vim.api.nvim_set_hl(0, "WhichKeyNormal", { bg = "#20242a" })
+vim.api.nvim_set_hl(0, "YankHighlight", { fg = p.black, bg = p.bright_red, nocombine = true })
+vim.api.nvim_set_hl(0, "Visual", { fg = p.black, bg = p.magenta, nocombine = true })
+vim.api.nvim_set_hl(0, "CursorLine", { bg = p.lblack, nocombine = true })
 vim.api.nvim_set_hl(0, "Normal", { bg = "NONE" })
-vim.api.nvim_set_hl(0, "WinSeparator", { fg = "#20242a", bg = "#20242a" })
+vim.api.nvim_set_hl(0, "WinSeparator", { fg = p.lblack, bg = p.lblack })
+
+-- Statusline: lualine styles its own sections, but the fill either side of
+-- them falls back to StatusLine, which was left at the default grey.
+vim.api.nvim_set_hl(0, "StatusLine", { fg = p.white, bg = "NONE" })
+vim.api.nvim_set_hl(0, "StatusLineNC", { fg = p.bright_black, bg = "NONE" })
+
+-- Floats (LSP hover, diagnostics, which-key) inherit the terminal's opacity
+vim.api.nvim_set_hl(0, "NormalFloat", { bg = "NONE" })
+vim.api.nvim_set_hl(0, "FloatBorder", { fg = p.lblack, bg = "NONE" })
+vim.api.nvim_set_hl(0, "FloatTitle", { fg = p.bright_black, bg = "NONE" })
+vim.api.nvim_set_hl(0, "WhichKeyNormal", { bg = "NONE" })
+vim.api.nvim_set_hl(0, "WhichKeyBorder", { fg = p.lblack, bg = "NONE" })
 
 -- Bufferline
-vim.api.nvim_set_hl(0, "BufferLineIndicatorSelected", { fg = "#000000", bg = "#000000", nocombine = true })
-vim.api.nvim_set_hl(0, "BufferLineBufferSelected", { fg = "#dfdfdd", bg = "#000000", nocombine = true })
-vim.api.nvim_set_hl(0, "BufferLineBackground", { bg = "#20242a" })
-vim.api.nvim_set_hl(0, "BufferLineFill", { bg = "#20242a" })
+vim.api.nvim_set_hl(0, "BufferLineIndicatorSelected", { fg = p.black, bg = p.black, nocombine = true })
+vim.api.nvim_set_hl(0, "BufferLineBufferSelected", { fg = p.white, bg = p.black, nocombine = true })
+vim.api.nvim_set_hl(0, "BufferLineBackground", { bg = p.lblack })
+vim.api.nvim_set_hl(0, "BufferLineFill", { bg = p.lblack })
 
 -- Searching
-vim.api.nvim_set_hl(0, "CurSearch", { fg = "#000000", bg = "#e78284", bold = true, nocombine = true, })
-vim.api.nvim_set_hl(0, "Search", { fg = "#000000", bg = "#eebebe", nocombine = true, })
-vim.api.nvim_set_hl(0, "IncSearch", { fg = "#000000", bg = "#e78284" })
+vim.api.nvim_set_hl(0, "CurSearch", { fg = p.black, bg = p.red, bold = true, nocombine = true })
+vim.api.nvim_set_hl(0, "Search", { fg = p.black, bg = p.bright_red, nocombine = true })
+vim.api.nvim_set_hl(0, "IncSearch", { fg = p.black, bg = p.red })
 
 -- Matching
-vim.api.nvim_set_hl(0, "Substitute", { fg = "#000000", bg = "#e78284" })
+vim.api.nvim_set_hl(0, "Substitute", { fg = p.black, bg = p.red })
 
--- Completion
-vim.api.nvim_set_hl(0, "PmenuSel", { fg = "#000000", bg = "#b6e0a4" })
-vim.api.nvim_set_hl(0, "Pmenu", { fg = "#dfdfdd", bg = "#20242a" })
+-- Completion. Pmenu keeps a real bg so 'pumblend' has something to blend.
+vim.api.nvim_set_hl(0, "PmenuSel", { fg = p.black, bg = p.green })
+vim.api.nvim_set_hl(0, "Pmenu", { fg = p.white, bg = p.lblack })
 
 -- Diagnostics
-vim.api.nvim_set_hl(0, "DiagnosticVirtualTextError", { fg = "#e78284", bg = "NONE" })
-vim.api.nvim_set_hl(0, "DiagnosticVirtualTextWarn", { fg = "#fab387", bg = "NONE" })
-vim.api.nvim_set_hl(0, "DiagnosticVirtualTextInfo", { fg = "#eebebe", bg = "NONE" })
-vim.api.nvim_set_hl(0, "DiagnosticVirtualTextHint", { fg = "#9bbfbf", bg = "NONE" })
+vim.api.nvim_set_hl(0, "DiagnosticVirtualTextError", { fg = p.red, bg = "NONE" })
+vim.api.nvim_set_hl(0, "DiagnosticVirtualTextWarn", { fg = p.yellow, bg = "NONE" })
+vim.api.nvim_set_hl(0, "DiagnosticVirtualTextInfo", { fg = p.bright_red, bg = "NONE" })
+vim.api.nvim_set_hl(0, "DiagnosticVirtualTextHint", { fg = p.cyan, bg = "NONE" })
 
 require("lualine").setup({
   options = {
@@ -104,45 +91,45 @@ require("bufferline").setup({
     modified_icon = "✎"
   },
   highlights = {
-    modified = { fg = "#FFFFFF", bg = "#20242a" },
-    modified_selected = { bg = "#000000" }
+    modified = { fg = "#FFFFFF", bg = p.lblack },
+    modified_selected = { bg = p.black }
   }
 })
 
 local function apply_terminal_syntax()
   local syntax_map = {
-    Comment         = term_colors.bright_black,
-    String          = term_colors.yellow,
-    Constant        = term_colors.bright_red,
-    Number          = term_colors.yellow,
-    Boolean         = term_colors.bright_red,
-    Character       = term_colors.yellow,
+    Comment         = p.bright_black,
+    String          = p.yellow,
+    Constant        = p.bright_red,
+    Number          = p.yellow,
+    Boolean         = p.bright_red,
+    Character       = p.yellow,
 
-    Statement       = term_colors.magenta,
-    Keyword         = term_colors.magenta,
-    Conditional     = term_colors.magenta,
-    Repeat          = term_colors.magenta,
-    Label           = term_colors.magenta,
-    Operator        = term_colors.magenta,
+    Statement       = p.magenta,
+    Keyword         = p.magenta,
+    Conditional     = p.magenta,
+    Repeat          = p.magenta,
+    Label           = p.magenta,
+    Operator        = p.magenta,
 
-    Function        = term_colors.green,
-    Identifier      = term_colors.green,
+    Function        = p.green,
+    Identifier      = p.green,
 
-    Type            = term_colors.cyan,
-    StorageClass    = term_colors.cyan,
-    Structure       = term_colors.cyan,
-    Typedef         = term_colors.cyan,
+    Type            = p.cyan,
+    StorageClass    = p.cyan,
+    Structure       = p.cyan,
+    Typedef         = p.cyan,
 
-    PreProc         = term_colors.magenta,
-    Include         = term_colors.magenta,
-    Define          = term_colors.magenta,
-    Macro           = term_colors.magenta,
+    PreProc         = p.magenta,
+    Include         = p.magenta,
+    Define          = p.magenta,
+    Macro           = p.magenta,
 
-    Special         = term_colors.bright_red,
-    SpecialChar     = term_colors.bright_red,
+    Special         = p.bright_red,
+    SpecialChar     = p.bright_red,
 
-    Error           = term_colors.red,
-    Todo            = term_colors.bright_red,
+    Error           = p.red,
+    Todo            = p.bright_red,
   }
 
   for group, color in pairs(syntax_map) do
@@ -150,44 +137,44 @@ local function apply_terminal_syntax()
   end
 
   local ts_map = {
-    ["@comment"]              = term_colors.bright_black,
+    ["@comment"]              = p.bright_black,
 
-    ["@string"]               = term_colors.cyan,
-    ["@string.escape"]        = term_colors.cyan,
-    ["@character"]            = term_colors.cyan,
+    ["@string"]               = p.cyan,
+    ["@string.escape"]        = p.cyan,
+    ["@character"]            = p.cyan,
 
-    ["@constant"]             = term_colors.bright_red,
-    ["@constant.builtin"]     = term_colors.bright_red,
-    ["@number"]               = term_colors.yellow,
-    ["@boolean"]              = term_colors.bright_red,
+    ["@constant"]             = p.bright_red,
+    ["@constant.builtin"]     = p.bright_red,
+    ["@number"]               = p.yellow,
+    ["@boolean"]              = p.bright_red,
 
-    ["@keyword"]              = term_colors.magenta,
-    ["@keyword.function"]     = term_colors.magenta,
-    ["@keyword.return"]       = term_colors.magenta,
-    ["@conditional"]          = term_colors.magenta,
-    ["@repeat"]               = term_colors.magenta,
-    ["@operator"]             = term_colors.magenta,
-    ["@preproc"]              = term_colors.magenta,
+    ["@keyword"]              = p.magenta,
+    ["@keyword.function"]     = p.magenta,
+    ["@keyword.return"]       = p.magenta,
+    ["@conditional"]          = p.magenta,
+    ["@repeat"]               = p.magenta,
+    ["@operator"]             = p.magenta,
+    ["@preproc"]              = p.magenta,
 
-    ["@function"]             = term_colors.green,
-    ["@function.call"]        = term_colors.green,
-    ["@function.method"]      = term_colors.green,
-    ["@function.method.call"] = term_colors.green,
-    ["@constructor"]          = term_colors.green,
+    ["@function"]             = p.green,
+    ["@function.call"]        = p.green,
+    ["@function.method"]      = p.green,
+    ["@function.method.call"] = p.green,
+    ["@constructor"]          = p.green,
 
-    ["@variable"]             = term_colors.white,
-    ["@parameter"]            = term_colors.white,
-    ["@field"]                = term_colors.white,
-    ["@property"]             = term_colors.white,
-    ["@punctuation"]          = term_colors.white,
+    ["@variable"]             = p.white,
+    ["@parameter"]            = p.white,
+    ["@field"]                = p.white,
+    ["@property"]             = p.white,
+    ["@punctuation"]          = p.white,
 
-    ["@type"]                 = term_colors.yellow,
-    ["@type.builtin"]         = term_colors.yellow,
-    ["@module"]               = term_colors.yellow,
-    ["@namespace"]            = term_colors.yellow,
+    ["@type"]                 = p.yellow,
+    ["@type.builtin"]         = p.yellow,
+    ["@module"]               = p.yellow,
+    ["@namespace"]            = p.yellow,
 
-    ["@special"]              = term_colors.bright_red,
-    ["@error"]                = term_colors.red,
+    ["@special"]              = p.bright_red,
+    ["@error"]                = p.red,
   }
 
   for group, color in pairs(ts_map) do

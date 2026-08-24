@@ -9,10 +9,10 @@ vim.keymap.set("n", "<leader>h", fzf_files.history, { desc = "Update History" })
 vim.keymap.set('n', '<leader><leader>', '<cmd>Yazi<cr>', { desc = 'Yazi' })
 
 vim.keymap.set("n", "<C-Tab>", "<cmd>BufferLineCycleNext<cr>", { desc = "Next buffer" })
-vim.keymap.set("n", "<C-S-Tab>", "<cmd>BufferLineCyclePrev<cr>", { desc = "Previous buffer" })   
+vim.keymap.set("n", "<C-S-Tab>", "<cmd>BufferLineCyclePrev<cr>", { desc = "Previous buffer" })
 
 vim.keymap.set("n", "<Esc>", ":nohl<CR>", { desc = "Clear search highlighting", silent = true })
-vim.keymap.set("n", "<C-c>", "<cmd>bd<cr>", { desc = "Close current buffer" })   
+vim.keymap.set("n", "<C-c>", "<cmd>bd<cr>", { desc = "Close current buffer" })
 
 vim.keymap.set("n", "<A-j>", ":m .+1<CR>==", { desc = "Move line down" })
 vim.keymap.set("n", "<A-k>", ":m .-2<CR>==", { desc = "Move line up" })
