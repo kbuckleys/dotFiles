@@ -46,13 +46,6 @@ vim.opt.signcolumn = "yes"
 
 vim.opt.cmdheight = 0
 
--- Consistent borders for LSP hover, diagnostics and other built-in floats.
-vim.opt.winborder = "single"
-
--- Real alpha blending for the completion menu. See zenon.lua for the
--- terminal-transparency side of this (bg = NONE groups).
-vim.opt.pumblend = 10
-
 require("yazi").setup({
   yazi_floating_window_border = "single"
 })

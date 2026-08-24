@@ -8,25 +8,31 @@ local p = require("palette")
 vim.opt.termguicolors = true
 vim.opt.background = "dark"
 
--- Transparency note: kitty applies 'background_opacity' only to cells using
--- the terminal's *default* background. Any explicit bg is drawn fully opaque,
--- so bg = "NONE" is the only way to let the 0.80 opacity through. Mode colour
--- therefore lives in the foreground here instead of a filled block.
-local function mode(fg)
-  return {
-    a = { fg = fg, bg = "NONE", gui = "bold" },
-    b = { fg = p.white, bg = "NONE" },
-    c = { fg = p.bright_black, bg = "NONE" },
-  }
-end
-
 local zenon = {
-  normal   = mode(p.white),
-  insert   = mode(p.green),
-  visual   = mode(p.magenta),
-  replace  = mode(p.red),
-  command  = mode(p.yellow),
-  inactive = mode(p.bright_black),
+  normal = {
+    c = { bg = p.lblack },
+    a = { bg = p.lblack, gui = "bold" }
+  },
+  insert = {
+    c = { fg = p.black, bg = p.green },
+    a = { fg = p.black, bg = p.green, gui = "bold" }
+  },
+  visual = {
+    c = { fg = p.black, bg = p.magenta },
+    a = { fg = p.black, bg = p.magenta, gui = "bold" }
+  },
+  replace = {
+    c = { fg = p.black, bg = p.red },
+    a = { fg = p.black, bg = p.red, gui = "bold" }
+  },
+  command = {
+    c = { fg = p.black, bg = p.yellow },
+    a = { fg = p.black, bg = p.yellow, gui = "bold" }
+  },
+  inactive = {
+    c = { bg = p.black },
+    a = { bg = p.black, gui = "bold" }
+  }
 }
 
 -- UI
@@ -36,17 +42,9 @@ vim.api.nvim_set_hl(0, "CursorLine", { bg = p.lblack, nocombine = true })
 vim.api.nvim_set_hl(0, "Normal", { bg = "NONE" })
 vim.api.nvim_set_hl(0, "WinSeparator", { fg = p.lblack, bg = p.lblack })
 
--- Statusline: lualine styles its own sections, but the fill either side of
--- them falls back to StatusLine, which was left at the default grey.
-vim.api.nvim_set_hl(0, "StatusLine", { fg = p.white, bg = "NONE" })
-vim.api.nvim_set_hl(0, "StatusLineNC", { fg = p.bright_black, bg = "NONE" })
-
--- Floats (LSP hover, diagnostics, which-key) inherit the terminal's opacity
-vim.api.nvim_set_hl(0, "NormalFloat", { bg = "NONE" })
-vim.api.nvim_set_hl(0, "FloatBorder", { fg = p.lblack, bg = "NONE" })
-vim.api.nvim_set_hl(0, "FloatTitle", { fg = p.bright_black, bg = "NONE" })
-vim.api.nvim_set_hl(0, "WhichKeyNormal", { bg = "NONE" })
-vim.api.nvim_set_hl(0, "WhichKeyBorder", { fg = p.lblack, bg = "NONE" })
+-- Better Yazi borders
+vim.api.nvim_set_hl(0, "FloatBorder", { fg = p.lblack })
+vim.api.nvim_set_hl(0, "WhichKeyNormal", { bg = p.lblack })
 
 -- Bufferline
 vim.api.nvim_set_hl(0, "BufferLineIndicatorSelected", { fg = p.black, bg = p.black, nocombine = true })
@@ -62,7 +60,7 @@ vim.api.nvim_set_hl(0, "IncSearch", { fg = p.black, bg = p.red })
 -- Matching
 vim.api.nvim_set_hl(0, "Substitute", { fg = p.black, bg = p.red })
 
--- Completion. Pmenu keeps a real bg so 'pumblend' has something to blend.
+-- Completion
 vim.api.nvim_set_hl(0, "PmenuSel", { fg = p.black, bg = p.green })
 vim.api.nvim_set_hl(0, "Pmenu", { fg = p.white, bg = p.lblack })
 
