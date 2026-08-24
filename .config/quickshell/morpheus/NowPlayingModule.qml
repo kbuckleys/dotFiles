@@ -51,6 +51,11 @@ Collapsible {
         width: Math.min(implicitWidth, 240)
         elide: Text.ElideRight
         horizontalAlignment: Text.AlignLeft
+        // Sized with the bar's numerals rather than at BarText's default.
+        // Everything it sits beside — the counts, the workspaces, the clock —
+        // is set at clockSize, so the default two pixels larger made the track
+        // name read as the odd one out.
+        font.pixelSize: Zenon.clockSize
       }
     }
   }

@@ -41,13 +41,24 @@ Item {
   // traffic actually is. Both numbers are here to be changed: raise `max` if
   // this link is faster than the meter suggests, lower it if the top notches
   // never light.
-  // Separate ceilings, because the link is not symmetric. One shared 20MB/s
-  // full scale meant the upload meter was being measured against a download
-  // figure it could never reach — it topped out around four notches however
-  // hard the connection was pushing.
-  readonly property real barFloor: 1024              // below this is idle
-  readonly property real downCeil: 20 * 1024 * 1024  // full scale, down
-  readonly property real upCeil: 4 * 1024 * 1024     // full scale, up
+  // The ceiling is LEARNED, not guessed. Any fixed full-scale figure is a
+  // guess about someone else's line: measured on this one, the uplink peaks
+  // at 0.74 MB/s, so even a 4MB/s ceiling put a fully saturated upload at
+  // five notches and made the sixth unreachable by construction. Tracking the
+  // fastest rate actually seen means "all six lit" reads as "as fast as this
+  // link goes" — correct on a 6 Mbit uplink and on a gigabit one, with
+  // nothing to retune by hand.
+  //
+  // The peak decays slowly, so one big transfer does not desensitise the
+  // meter for the rest of the session; the floors stop an idle trickle from
+  // looking like saturation just because nothing faster has happened yet.
+  readonly property real barFloor: 1024                     // below this is idle
+  readonly property real minDownCeil: 2 * 1024 * 1024
+  readonly property real minUpCeil: 512 * 1024
+  // per 250ms sample — a half-life of about three minutes
+  readonly property real peakDecay: 0.999
+  property real downCeil: root.minDownCeil
+  property real upCeil: root.minUpCeil
 
   function barLevel(bytes, ceil) {
     if (bytes <= root.barFloor) return 0;
@@ -221,6 +232,11 @@ Item {
         const up = Math.max(0, (tx - root.sample.tx) / elapsed);
         root.downVal = root.smoothed(root.downVal, down);
         root.upVal = root.smoothed(root.upVal, up);
+        // the high-water mark each meter is scaled against
+        root.downCeil = Math.max(root.downVal, root.minDownCeil,
+          root.downCeil * root.peakDecay);
+        root.upCeil = Math.max(root.upVal, root.minUpCeil,
+          root.upCeil * root.peakDecay);
         root.downText = Helpers.powFormat(root.downVal);
         root.upText = Helpers.powFormat(root.upVal);
         root.downHistory = root.pushHistory(root.downHistory, root.downLevel);

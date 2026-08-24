@@ -148,8 +148,8 @@ Singleton {
     onTriggered: stateFile.setText(Chr.serialize(root.timers))
   }
 
-  Component.onCompleted: {
-    root.timers = Chr.parse(stateFile.text());
-    if (root.timers.length === 0) root.add("Pomodoro", 25);
-  }
+  // No default timer. An empty list stays empty — the panel says "no timers,
+  // n to add one", which is a better first impression than a pomodoro someone
+  // else decided you wanted.
+  Component.onCompleted: root.timers = Chr.parse(stateFile.text())
 }

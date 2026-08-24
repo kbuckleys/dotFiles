@@ -56,7 +56,7 @@ QtObject {
   readonly property int padScreen:  6
   // Every module occupies a slot of this height, and BarText fills it, so a
   // short label beside a taller sibling still sits on the bar's centre line.
-  readonly property int slot:      34
+  readonly property int slot:      32
   // the bar's type size; every module reads it through BarText
   readonly property int textSize:  18
 

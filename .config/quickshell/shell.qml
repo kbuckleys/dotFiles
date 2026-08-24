@@ -395,7 +395,12 @@ ShellRoot {
       // Its left edge is summed down the layout chain rather than mapped,
       // because mapFromItem is a function call and would not re-run when a
       // module beside it changes width.
-      readonly property real takeoverX: Zenon.padBar + audioGroup.x + nowMod.x
+      // Starts just past the divider's rule, not at the module's own left
+      // edge. A Divider carries a gap on EACH side, so the module begins a
+      // full Zenon.gap right of the 1px line — measuring from there left a
+      // strip of bare pill between the divider and the green.
+      readonly property real takeoverX:
+        Zenon.padBar + audioGroup.x + nowMod.x - Zenon.gap
       // It runs to the pill's edge only when nothing follows it. With the
       // status icons up it stops at the module's own right edge and stays
       // square: taking over the END of the bar is one thing, painting across
@@ -403,7 +408,9 @@ ShellRoot {
       readonly property bool takeoverToEdge: !statusMod.active
       readonly property real takeoverW: bg.takeoverToEdge
         ? Math.max(0, bg.width - bg.takeoverX - bg.border.width)
-        : Math.max(0, nowMod.width)
+        // widened by the same gap the start moved left by, so the right
+        // edge stays where it was
+        : Math.max(0, nowMod.width + Zenon.gap)
       Rectangle {
         id: takeover
         // Faded rather than switched. BarText already eases its colour, so
