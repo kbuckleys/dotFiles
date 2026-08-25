@@ -34,7 +34,7 @@ Collapsible {
       width: label.width + chip.pad * 2
       height: Zenon.slot
       anchors.verticalCenter: parent.verticalCenter
-      readonly property int pad: 10
+      readonly property int pad: 0
 
       BarText {
         id: label

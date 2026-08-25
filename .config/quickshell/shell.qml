@@ -148,7 +148,7 @@ ShellRoot {
   // the same number, and to the same number *this frame* — the radius eases,
   // and a layer that rounded to the end value cut its highlight across the
   // pill's corner for the whole animation.
-  property real pillRadius: root.pillMorphed ? 12 : 18
+  property real pillRadius: root.pillMorphed ? 12 : 8
   Behavior on pillRadius { NumberAnimation { duration: Zenon.slow; easing.type: Zenon.ease } }
 
   // 0 = the pill is wearing morpheus, 1 = it is fully wearing the layer.
