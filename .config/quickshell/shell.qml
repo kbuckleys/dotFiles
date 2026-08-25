@@ -143,13 +143,10 @@ ShellRoot {
     if (root.morphSource === layer) morphRelease.restart();
   }
 
-  // The pill's corner radius, as a root property rather than a literal buried
-  // in bg: a morphed layer paints inside these corners, so it has to round to
-  // the same number, and to the same number *this frame* — the radius eases,
-  // and a layer that rounded to the end value cut its highlight across the
-  // pill's corner for the whole animation.
-  property real pillRadius: root.pillMorphed ? 12 : 8
-  Behavior on pillRadius { NumberAnimation { duration: Zenon.slow; easing.type: Zenon.ease } }
+  // Single token in Zenon — 8:8 uniform, no morph. Kept as a root
+  // property so bg and any morphed layer can still bind to the same value
+  // without each importing Zenon directly (and so a future 12:8 is one line).
+  property real pillRadius: Zenon.pillRadius
 
   // 0 = the pill is wearing morpheus, 1 = it is fully wearing the layer.
   // Same duration and easing as every other pill Behavior, so it is an exact

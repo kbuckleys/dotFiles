@@ -288,7 +288,7 @@ PanelWindow {
 
     LayerShadow {
       panel: bgRoot
-      cornerRadius: 10
+      cornerRadius: Zenon.pillRadius
       morphed: popup.morphMode
     }
 
@@ -301,7 +301,7 @@ PanelWindow {
       // one row or one column short. This hands the content its full box back.
       anchors.margins: -bgRoot.border.width
       color: popup.morphMode ? "transparent" : popup.bgColor
-      radius: 10
+      radius: Zenon.pillRadius
       border.color: popup.morphMode ? "transparent" : popup.borderColor
       border.width: 1
       focus: true

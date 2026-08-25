@@ -355,11 +355,11 @@ PanelWindow {
       // further out, which is invisible.
       anchors.margins: -bg.border.width
       color: popup.morphMode ? "transparent" : popup.bgColor
-      radius: 10
-      topLeftRadius: 10
-      topRightRadius: 10
-      bottomLeftRadius: 10
-      bottomRightRadius: 10
+      radius: Zenon.pillRadius
+      topLeftRadius: Zenon.pillRadius
+      topRightRadius: Zenon.pillRadius
+      bottomLeftRadius: Zenon.pillRadius
+      bottomRightRadius: Zenon.pillRadius
       border.color: popup.morphMode ? "transparent" : popup.borderColor
       border.width: 1
 

@@ -59,6 +59,9 @@ QtObject {
   readonly property int slot:      32
   // the bar's type size; every module reads it through BarText
   readonly property int textSize:  18
+  // the pill and every layer's corner radius — 8:8, no morph. A single token
+  // so the bar, runner, and all other layers stay even without duped literals.
+  readonly property int pillRadius: 8
 
   // ── the clock's face ─────────────────────────────────────────────────
   // A seven-segment LCD, the way an old bedside clock renders. DSEG covers

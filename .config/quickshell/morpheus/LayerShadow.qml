@@ -23,9 +23,8 @@ RectangularShadow {
   // the panel this falls behind — anchored to it, so it tracks every size
   // and morph animation without a binding per layer
   property Item panel: null
-  // matched by hand rather than read off the panel: `radius` is a Rectangle
-  // property, and a layer is free to hand in a panel that is not one
-  property real cornerRadius: 10
+  // single token in Zenon — 8:8 uniform
+  property real cornerRadius: Zenon.pillRadius
   // a layer that is currently wearing the pill must not cast a shadow — it is
   // the pill at that moment, and the pill is the ground floor
   property bool morphed: false

@@ -108,10 +108,10 @@ PanelWindow {
 
 property var statusbar: null
 
-  // every rounded corner in the runner, in one place
-  readonly property real corner: 5
-  // the pill's live corner radius, handed down by shell.qml
-  property real morphRadius: 12
+  // every rounded corner in the runner, in one place — single token in Zenon
+  readonly property real corner: Zenon.pillRadius
+  // the pill's live corner radius, handed down by shell.qml (also Zenon.pillRadius)
+  property real morphRadius: Zenon.pillRadius
   // The radius of the corner a row is actually sitting in. Standalone that is
   // the runner's own background; morphed the runner IS the pill, so it is the
   // pill's — and the pill's is easing, so a row that rounded to the runner's

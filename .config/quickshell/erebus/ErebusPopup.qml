@@ -24,7 +24,8 @@ PanelWindow {
   property real morphFade: 1
   // the pill's live corner radius; erebus paints over the pill, so it has to
   // wear the pill's corners frame for frame or they peek out around its own
-  property real morphRadius: 12
+  // single token in Zenon — 8:8 uniform
+  property real morphRadius: Zenon.pillRadius
   // Morphed, erebus fades in on the pill's clock rather than its own, and only
   // once the morpheus row has finished clearing.
   // Erebus animates off `shown` rather than a showFactor, so it needs its own
@@ -69,11 +70,8 @@ PanelWindow {
   readonly property color idleGlyph: popup.ink
   // morphed, the panel has to cover the pill's own rounding and 1px border
   // exactly, or they peek out around erebus' corners
-  // ONE radius for all four corners. It used to be 6 across the top and 10
-  // across the bottom, which is not a style — it just made the panel look
-  // slightly wrong in a way that was hard to point at. 10 is what every other
-  // layer in this shell rounds to.
-  readonly property real outerRadius: popup.morphMode ? popup.morphRadius : 10
+  // ONE radius for all four corners. Single token in Zenon (8:8 uniform).
+  readonly property real outerRadius: Zenon.pillRadius
 
   // Runner's rule for selections, adopted here. Two parts to it:
   //
