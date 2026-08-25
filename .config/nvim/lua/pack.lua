@@ -14,12 +14,12 @@ vim.pack.add({
   'https://github.com/nvim-lua/plenary.nvim.git',
   'https://github.com/mikavilpas/yazi.nvim.git',
   "https://github.com/neovim/nvim-lspconfig",
-  "https://github.com/mason-org/mason.nvim",
+  "https://github.com/windwp/nvim-autopairs",
   "https://github.com/folke/which-key.nvim",
+  "https://github.com/mason-org/mason.nvim",
   "https://github.com/chentoast/marks.nvim",
   "https://github.com/nvim-mini/mini.nvim",
   "https://github.com/tpope/vim-fugitive",
-  "https://github.com/windwp/nvim-autopairs",
 })
 
 -- Update
@@ -64,25 +64,17 @@ require("mini.completion").setup({
     }
 })
 
--- friendly-snippets ships VSCode-style json that from_lang() picks up off the
--- runtimepath; without a snippet engine those files were never read.
 local snippets = require("mini.snippets")
 snippets.setup({
     snippets = { snippets.gen_loader.from_lang() }
 })
 
--- Every keymap in binds.lua carries a `desc`, which only ever surfaces here.
 require("which-key").setup({
     preset = "helix"
 })
 
--- Registers :Mason. Nothing is installed yet, so LSP servers are picked up
--- from PATH in lsp.lua rather than assumed to exist.
 require("mason").setup()
 
--- main branch: setup() only configures install paths. Highlighting is opt-in
--- per buffer via vim.treesitter.start(), which is what makes the @-group
--- theming in zenon.lua actually apply.
 require("nvim-treesitter").setup()
 
 vim.api.nvim_create_autocmd("FileType", {

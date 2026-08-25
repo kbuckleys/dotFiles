@@ -5,8 +5,6 @@
 
 local M = {}
 
--- Tracks the currently open picker's window/buffer to guard
--- against stacking multiple floats on top of each other.
 local state = { win = nil, buf = nil }
 
 local term_colors = require("palette")

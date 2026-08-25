@@ -3,9 +3,6 @@
 -- └─┘└─┘┘└┘└┴┘└─┘┴└─┴ ┴└─┘
 -- https://github.com/kbuckleys/
 
--- nvim-lspconfig ships the definitions in its lsp/ directory; vim.lsp.enable
--- picks them up off the runtimepath. Only enable a server whose binary is
--- actually present, so nothing errors on a machine that lacks it.
 local candidates = {
   "rust_analyzer",
   "lua_ls",
@@ -32,8 +29,6 @@ for _, name in ipairs(candidates) do
   end
 end
 
--- zenon.lua themes DiagnosticVirtualText*, but virtual text is off by default,
--- so those groups were never reachable.
 vim.diagnostic.config({
   virtual_text = { prefix = "▪", spacing = 2 },
   underline = true,

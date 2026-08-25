@@ -3,8 +3,7 @@
 -- └─┘└─┘┘└┘└┴┘└─┘┴└─┴ ┴└─┘
 -- https://github.com/kbuckleys/
 
--- Single source of truth for the zenon palette. Previously duplicated in
--- zenon.lua and fzf.lua, where the bright_* entries had drifted apart.
+-- Single source of truth for the zenon palette
 return {
   black           = "#000000",
   lblack          = "#20242a",

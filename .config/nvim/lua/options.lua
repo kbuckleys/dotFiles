@@ -20,8 +20,6 @@ vim.opt.wrap = true
 vim.opt.smartindent = true
 vim.opt.inccommand = "split"
 
--- A bare %l ignores 'relativenumber'. Mirror the built-in behaviour instead:
--- relative distance everywhere, absolute number on the cursor line.
 vim.opt.statuscolumn = "%=%{v:relnum == 0 ? v:lnum : v:relnum} %s"
 
 vim.opt.splitbelow = true
@@ -50,9 +48,7 @@ require("yazi").setup({
   yazi_floating_window_border = "single"
 })
 
--- Command bar pushes the Statusline upwards instead of overlapping it.
--- Owns both messages and the cmdline: ext_messages implies ext_cmdline, which
--- is why noice.nvim and mini.cmdline were removed rather than configured.
+-- Command bar pushes the Statusline upwards instead of overlapping it
 require('vim._core.ui2').enable({
   enable = true,
   msg = {
