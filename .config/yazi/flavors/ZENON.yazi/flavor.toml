@@ -187,6 +187,7 @@ files = [
 ]
 dirs = [
 	{ name = "mnt", text = " " },
+	{ name = "projects", text = "󰲃 " },
 	{ name = "lua", text = " " },
 	{ name = "boot", text = " " },
 	{ name = "run", text = " " },
