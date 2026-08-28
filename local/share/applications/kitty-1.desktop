@@ -8,6 +8,7 @@ TryExec=kitty
 Exec=kitty -1
 Icon=kitty
 Categories=System;TerminalEmulator;
+NoDisplay=true
 X-TerminalArgExec=--
 X-TerminalArgTitle=--title
 X-TerminalArgAppId=--class

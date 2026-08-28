@@ -9,3 +9,4 @@ Categories=Graphics;Viewer;Photography;
 MimeType=image/png;image/jpeg;image/jpg;image/gif;image/webp;image/bmp;image/tiff;image/tif;image/svg+xml;image/avif;image/heif;image/heic;image/jxl;image/x-exr;image/x-portable-pixmap;image/x-tga;image/x-qoi;image/x-exr;image/x-portable-anymap;image/x-dicom;
 Keywords=image;viewer;picture;
 StartupWMClass=swayimg
+NoDisplay=true
