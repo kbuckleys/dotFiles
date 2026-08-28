@@ -4,7 +4,7 @@
 -- https://github.com/kbuckleys/
 
 -- DEFAULTS
-local term = "kitty -1"
+local term = "xdg-terminal-exec"
 local web = "firefox"
 local fman = term .. " yazi"
 

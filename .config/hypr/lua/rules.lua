@@ -22,7 +22,7 @@ hl.window_rule({ match = { float = true },       border_color = "#b6e0a499", bor
 hl.window_rule({ match = { float = false }, no_shadow = true })
 hl.window_rule({ match = { class = "^$" }, no_shadow = false })
 
--- LAYERS
+-- GLOBAL BLUR
 hl.layer_rule({ match = { namespace = ".*" }, blur = true, ignore_alpha = 0.5 })
 
 -- SPECIAL WORKSPACE
