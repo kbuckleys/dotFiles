@@ -160,7 +160,7 @@ function writeCommand(path, content) {
 
 function terminalCommand(cmd) {
   const t = String(cmd).trim().toLowerCase();
-  if (t === "kitty" || t === "kitty -1") {
+  if (t === "kitty") {
     return "setsid kitty --detach " + shellQuote(cmd) + " >/dev/null 2>&1 &";
   }
   return "xdg-terminal-exec --title=runner --hold -e " + shell() + " -i -c " + shellQuote(cmd) + " >/dev/null 2>&1 &";
