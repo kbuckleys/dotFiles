@@ -171,7 +171,7 @@ Collapsible {
     cursorShape: Qt.PointingHandCursor
     onEntered: root.hovered = true
     onExited: root.hovered = false
-    onClicked: Quickshell.execDetached(["xdg-terminal-exec", "--title=ZENU", "-e", Helpers.home() + "/.config/scripts/ZENU.lua update"])
+    onClicked: Quickshell.execDetached(["xdg-terminal-exec", "--title=ZENU", "-e", Helpers.home() + "/.config/scripts/ZENU.lua", "update"])
   }
 
   Tooltip {

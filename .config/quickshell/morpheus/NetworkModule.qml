@@ -138,7 +138,7 @@ Item {
     anchors.fill: parent
     hoverEnabled: true
     cursorShape: Qt.PointingHandCursor
-    onClicked: Quickshell.execDetached(["xdg-terminal-exec", "--title=bandwhich", "-e", "sudo bandwhich"])
+    onClicked: Quickshell.execDetached(["xdg-terminal-exec", "--title=bandwhich", "-e", "sudo", "bandwhich"])
   }
 
   Tooltip {
