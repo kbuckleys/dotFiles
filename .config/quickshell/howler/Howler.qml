@@ -109,7 +109,10 @@ Singleton {
 
     onNotification: (notif) => {
       notif.tracked = true;
-      if (root.trackMusic || !root.playerFor(notif.appName, notif.desktopEntry))
+      // the updates count re-sends a toast on every pump: it only exists to
+      // be that toast, so it never earns a row in the bell's history
+      if (!root.isUpdate(notif) &&
+          (root.trackMusic || !root.playerFor(notif.appName, notif.desktopEntry)))
         root.record(notif);
     }
   }
@@ -123,6 +126,12 @@ Singleton {
   property bool trackMusic: false
   // how many have arrived since the history panel was last opened
   property int unread: 0
+
+  // the updates module's one-shot: a toast, but never a row in the list —
+  // it is there and gone on its own timer, not something to scroll back to
+  function isUpdate(notif) {
+    return String(notif.appName ?? "").toLowerCase() === "waybar-updates";
+  }
 
   function record(notif) {
     const row = {
