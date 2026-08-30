@@ -11,6 +11,7 @@ local LOGO_PATH  = HOME .. "/.config/logo"
 local AUR_CACHE  = HOME .. "/.cache/paru/packages.aur"
 local CLONE_DIR  = HOME .. "/.cache/paru/clone"
 local CACHE_DIR  = (os.getenv("XDG_CACHE_HOME") or (HOME .. "/.cache")) .. "/zenu"
+local APP_DIR    = (os.getenv("XDG_DATA_HOME") or (HOME .. "/.local/share")) .. "/applications"
 local PACMAN_LOG = "/var/log/pacman.log"
 local PKG_CACHE  = "/var/cache/pacman/pkg"
 local DEBUG      = os.getenv("ZENU_DEBUG") ~= nil
@@ -1709,6 +1710,90 @@ local function build_from_aur(pkg)
   return true
 end
 
+-- A launcher entry, generated rather than shipped as a file: the Exec line
+-- has to name wherever ZENU actually lives, and that is only known at run
+-- time. Written during the first start, next to the paru build, and never
+-- overwritten -- an entry already on disk may have been edited on purpose.
+local DESKTOP_TEMPLATE = [[
+[Desktop Entry]
+Type=Application
+Name=ZENU
+GenericName=Package Manager
+Comment=Packages, updates and cache maintenance, through paru
+Exec=%s
+Icon=system-software-install
+Terminal=%s
+Categories=System;PackageManager;
+Keywords=pacman;paru;aur;package;update;
+StartupNotify=false
+Actions=update;maintain;
+
+[Desktop Action update]
+Name=Check for Updates
+Exec=%s
+
+[Desktop Action maintain]
+Name=Maintenance
+Exec=%s
+]]
+
+-- An Exec value is not a shell word: a path holding a reserved character has
+-- to be quoted, and a few characters stay escaped inside the quotes.
+local function desktop_arg(s)
+  if not s:find('[%s"\'\\<>~|&;$*?#()`]') then return s end
+  return '"' .. s:gsub('[\\"`$]', "\\%0") .. '"'
+end
+
+-- Returns "written", "kept" or "failed", plus the path or the reason.
+local function install_desktop_entry()
+  local self = trim(capture("realpath -- "
+    .. shq((arg and arg[0]) or "") .. " 2>/dev/null"))
+  if self == "" then
+    return "failed", "could not work out where ZENU is installed"
+  end
+
+  local path = APP_DIR .. "/zenu.desktop"
+  local existing = io.open(path, "r")
+  if existing then
+    existing:close()
+    return "kept", path
+  end
+
+  -- Terminal=true leaves the choice of terminal to whatever reads the entry,
+  -- and a launcher with none configured just does nothing at all. When
+  -- xdg-terminal-exec is installed, name it instead: it resolves the terminal
+  -- the same way the desktop's own handler does.
+  local wrapped = have("xdg-terminal-exec")
+  local function exec_line(mode)
+    local cmd = desktop_arg(self) .. " " .. mode
+    if wrapped then cmd = "xdg-terminal-exec --title=ZENU " .. cmd end
+    return cmd
+  end
+
+  if not sh("mkdir -p " .. shq(APP_DIR)) then
+    return "failed", "could not create " .. APP_DIR
+  end
+
+  -- Deliberately not write_file(): that exits the process on failure, and a
+  -- launcher entry is not worth ending a successful bootstrap over.
+  local f, err = io.open(path, "w")
+  if not f then
+    return "failed", "cannot write " .. path .. ": " .. tostring(err)
+  end
+  f:write(string.format(DESKTOP_TEMPLATE,
+    exec_line("manage"), wrapped and "false" or "true",
+    exec_line("update"), exec_line("maintain")))
+  f:close()
+  sh("chmod 644 " .. shq(path))
+
+  -- Best effort: most launchers read the directory itself, and the ones that
+  -- keep a cache want to be told.
+  if have("update-desktop-database") then
+    sh("update-desktop-database " .. shq(APP_DIR) .. " >/dev/null 2>&1")
+  end
+  return "written", path
+end
+
 local function install_paru()
   local items = {}
   for _, c in ipairs(PARU_CHOICES) do
@@ -1751,6 +1836,15 @@ local function install_paru()
   show_logo()
   if built and paru_installed() then
     print("  \027[1;32m" .. pkg .. " installed.\027[0m")
+    print("")
+    local status, detail = install_desktop_entry()
+    if status == "written" then
+      print("  Launcher entry written to " .. detail .. ".")
+    elseif status == "kept" then
+      print("  Launcher entry already at " .. detail .. "; left alone.")
+    else
+      print("  \027[33mNo launcher entry: " .. detail .. "\027[0m")
+    end
     pause()
     return true
   end
