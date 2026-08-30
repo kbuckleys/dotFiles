@@ -20,7 +20,9 @@ vim.opt.wrap = true
 vim.opt.smartindent = true
 vim.opt.inccommand = "split"
 
-vim.opt.statuscolumn = "%=%{v:relnum == 0 ? v:lnum : v:relnum} %s"
+-- Only number the real buffer line: v:virtnum is non-zero on wrapped
+-- continuation rows and virtual lines, which would repeat the number
+vim.opt.statuscolumn = "%=%{v:virtnum != 0 ? '' : (v:relnum == 0 ? v:lnum : v:relnum)} %s"
 
 vim.opt.splitbelow = true
 vim.opt.splitright = true

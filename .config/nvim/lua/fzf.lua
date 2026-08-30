@@ -9,25 +9,30 @@ local state = { win = nil, buf = nil }
 
 local term_colors = require("palette")
 
+-- Map the float onto NormalFloat, not Normal: Normal is transparent
+local float_winhl = "Normal:NormalFloat,NormalFloat:NormalFloat"
+
 local function build_fzf_colors()
   return table.concat({
-    "fg:"        .. term_colors.white,
-    "bg:"        .. term_colors.black,
-    "fg+:"       .. term_colors.green,
-    "bg+:"       .. term_colors.black,
-    "hl:"        .. term_colors.yellow,
-    "hl+:"       .. term_colors.yellow,
-    "prompt:"    .. term_colors.green,
-    "pointer:"   .. term_colors.green,
-    "marker:"    .. term_colors.magenta,
-    "spinner:"   .. term_colors.bright_red,
-    "info:"      .. term_colors.bright_red,
-    "header:"    .. term_colors.magenta,
-    "border:"    .. term_colors.black,
-    "label:"     .. term_colors.green,
-    "query:"     .. term_colors.white,
-    "separator:" .. term_colors.lblack,
-    "scrollbar:" .. term_colors.bright_black,
+    "fg:"          .. term_colors.white,
+    "bg:"          .. term_colors.black,
+    "fg+:"         .. term_colors.green,
+    "bg+:"         .. term_colors.black,
+    "gutter:"      .. term_colors.black,
+    "preview-bg:"  .. term_colors.black,
+    "hl:"          .. term_colors.yellow,
+    "hl+:"         .. term_colors.yellow,
+    "prompt:"      .. term_colors.green,
+    "pointer:"     .. term_colors.green,
+    "marker:"      .. term_colors.magenta,
+    "spinner:"     .. term_colors.bright_red,
+    "info:"        .. term_colors.bright_red,
+    "header:"      .. term_colors.magenta,
+    "border:"      .. term_colors.lblack,
+    "label:"       .. term_colors.green,
+    "query:"       .. term_colors.white,
+    "separator:"   .. term_colors.lblack,
+    "scrollbar:"   .. term_colors.bright_black,
   }, ",")
 end
 
@@ -76,7 +81,7 @@ function M.open()
   })
   state.win, state.buf = win, buf
 
-  vim.wo[win].winhighlight = "Normal:Normal,FloatBorder:FloatBorder,NormalFloat:Normal"
+  vim.wo[win].winhighlight = float_winhl
 
   -- Recenter/resize on terminal resize
   local group = vim.api.nvim_create_augroup("FzfFloatResize", { clear = true })
@@ -218,7 +223,7 @@ function M.history()
   })
   state.win, state.buf = win, buf
 
-  vim.wo[win].winhighlight = "Normal:Normal,FloatBorder:FloatBorder,NormalFloat:Normal"
+  vim.wo[win].winhighlight = float_winhl
 
   local fzf_colors = build_fzf_colors()
   local header = "RETURN Close"

@@ -32,6 +32,11 @@ vim.keymap.set("n", "<leader>X", "<cmd>!chmod +x %<CR>", { silent = true, desc =
 
 vim.keymap.set("n", "<leader>re", "<cmd>restart<cr>", { desc = "Restart config :restart)" })
 
+-- md-render
+vim.keymap.set("n", "<leader>mp", "<Plug>(md-render-preview)", { desc = "Markdown preview (toggle)" })
+vim.keymap.set("n", "<leader>mt", "<Plug>(md-render-preview-tab)", { desc = "Markdown preview in tab (toggle)" })
+vim.keymap.set("n", "<leader>md", "<Plug>(md-render-demo)", { desc = "Markdown render demo" })
+
 vim.keymap.set("n", "<leader>+", function()
   vim.cmd("vertical resize +5")
 end, { desc = "Increase panel width" })

@@ -42,9 +42,25 @@ vim.api.nvim_set_hl(0, "CursorLine", { bg = p.lblack, nocombine = true })
 vim.api.nvim_set_hl(0, "Normal", { bg = "NONE" })
 vim.api.nvim_set_hl(0, "WinSeparator", { fg = p.lblack, bg = p.lblack })
 
--- Better Yazi borders
-vim.api.nvim_set_hl(0, "FloatBorder", { fg = p.lblack })
-vim.api.nvim_set_hl(0, "WhichKeyNormal", { bg = p.lblack })
+-- Layers (floats, leader menu, Yazi, fzf, LSP hovers, notifications) all sit on
+-- one opaque black surface ringed in light black. Normal stays transparent, so
+-- anything mapping a float onto Normal instead of NormalFloat shows through.
+local layer        = { fg = p.white, bg = p.black }
+local layer_border = { fg = p.lblack, bg = p.black }
+
+for group, hl in pairs({
+  NormalFloat     = layer,
+  FloatBorder     = layer_border,
+  FloatTitle      = { fg = p.green, bg = p.black },
+  FloatFooter     = { fg = p.bright_black, bg = p.black },
+
+  -- which-key and yazi.nvim remap the float onto groups of their own
+  WhichKeyNormal  = layer,
+  YaziFloat       = layer,
+  YaziFloatBorder = layer_border,
+}) do
+  vim.api.nvim_set_hl(0, group, hl)
+end
 
 -- Bufferline
 vim.api.nvim_set_hl(0, "BufferLineIndicatorSelected", { fg = p.black, bg = p.black, nocombine = true })
