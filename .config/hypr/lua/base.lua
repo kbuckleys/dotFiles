@@ -20,8 +20,8 @@ hl.env("XCURSOR_SIZE", "6")
 
 hl.config({
 	misc = {
+        font_family = "JetBrainsMono Nerd Font Medium",
 		allow_session_lock_restore = true,
-		font_family = "JetBrainsMono Nerd Font Medium",
 		disable_splash_rendering = true,
 		initial_workspace_tracking = 0,
 		close_special_on_empty = true,

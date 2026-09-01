@@ -5,7 +5,6 @@
 
 hl.window_rule({ match = { class = "kitty", title = "termfilechooser" },  float = true, size = { 1000, 450 }})
 hl.window_rule({ match = { class = "steam", title = "Steam Settings" },   float = true })
-hl.window_rule({ match = { class = "kitty", title = "bandwhich" },        float = true, size = { 1000, 800 }})
 hl.window_rule({ match = { class = "kitty", title = "runner" },           float = true, size = { 1000, 1000 }})
 hl.window_rule({ match = { class = "kitty",title = "Wiremix" },           float = true, size = { 650, 650 }})
 hl.window_rule({ match = { class = "xdg-desktop-portal-gtk" },            float = true, size = { 1000, 1000 }})
