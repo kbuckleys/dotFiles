@@ -3,13 +3,14 @@
 -- └─┘└─┘┘└┘└┴┘└─┘┴└─┴ ┴└─┘
 -- https://github.com/kbuckleys/
 
-hl.window_rule({ match = { class = "kitty", title = "termfilechooser" },  float = true, size = { 1000, 450 }})
-hl.window_rule({ match = { class = "steam", title = "Steam Settings" },   float = true })
-hl.window_rule({ match = { class = "kitty", title = "runner" },           float = true, size = { 1000, 1000 }})
-hl.window_rule({ match = { class = "kitty",title = "sysmon" },            float = true, size = { 1000, 1100 }})
-hl.window_rule({ match = { class = "kitty",title = "ZENU" },              float = true, size = { 1000, 1100 }})
-hl.window_rule({ match = { class = "swayimg" },                           float = true })
-hl.window_rule({ match = { class = "mpv" },                               float = true })
+hl.window_rule({ match = { class = "org.quickshell", title = "janus" },         float = true, size = { 1000, 1000 }})
+hl.window_rule({ match = { class = "org.quickshell", title = "janus-picker" },  float = true, size = { 1000, 450 }})
+hl.window_rule({ match = { class = "steam", title = "Steam Settings" },         float = true })
+hl.window_rule({ match = { class = "footclient", title = "runner" },            float = true, size = { 1000, 1000 }})
+hl.window_rule({ match = { class = "footclient",title = "sysmon" },             float = true, size = { 1000, 1100 }})
+hl.window_rule({ match = { class = "footclient",title = "ZENU" },               float = true, size = { 1000, 1100 }})
+hl.window_rule({ match = { class = "swayimg" },                                 float = true })
+hl.window_rule({ match = { class = "mpv" },                                     float = true })
 
 -- BORDERS
 hl.window_rule({ match = { fullscreen = true },  border_color = "#fab38799", border_size = 2, rounding = 5 })

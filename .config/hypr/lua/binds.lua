@@ -4,9 +4,8 @@
 -- https://github.com/kbuckleys/
 
 -- DEFAULTS
-local term = "kitty -1"
+local term = "footclient"
 local web = "firefox"
-local fman = term .. " yazi"
 
 -- MISC
 hl.bind("SUPER + SHIFT + ESCAPE",  hl.dsp.exec_cmd("hyprshutdown"), { locked = true })
@@ -15,12 +14,12 @@ hl.bind("SUPER + RETURN",          hl.dsp.exec_cmd(term))
 hl.bind("SUPER + P",               hl.dsp.exec_cmd(term .. " -T ZENU ~/.config/scripts/ZENU.lua"))
 hl.bind("SUPER + SHIFT + P",       hl.dsp.exec_cmd(term .. " -T ZENU ~/.config/scripts/ZENU.lua update"))
 hl.bind("SUPER + CONTROL + P",     hl.dsp.exec_cmd("hyprpicker -a"))
-hl.bind("SUPER + E",               hl.dsp.exec_cmd(fman))
 hl.bind("SUPER + B",               hl.dsp.exec_cmd(web))
 
 -- QS
 hl.bind("SUPER + ESCAPE",     hl.dsp.exec_cmd("qs ipc call Erebus toggle"))
 hl.bind("SUPER + SPACE",      hl.dsp.exec_cmd("qs ipc call Runner toggle"))
+hl.bind("SUPER + E",          hl.dsp.exec_cmd("qs ipc call Janus toggle"))
 hl.bind("SUPER + C",          hl.dsp.exec_cmd("qs ipc call Folio toggle"))
 hl.bind("SUPER + SHIFT + C",  hl.dsp.exec_cmd("qs ipc call Adder toggle"))
 hl.bind("SUPER + S",          hl.dsp.exec_cmd("qs ipc call Scout toggle"))

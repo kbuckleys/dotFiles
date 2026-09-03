@@ -27,3 +27,4 @@ hl.animation({ leaf = "layersIn",             enabled = true, speed = 1,     bez
 hl.animation({ leaf = "layersOut",            enabled = true, speed = 1,     bezier = "linear", style = "fade" })
 hl.animation({ leaf = "fadeLayersIn",         enabled = true, speed = 1,     bezier = "almostLinear" })
 hl.animation({ leaf = "fadeLayersOut",        enabled = true, speed = 1,     bezier = "almostLinear" })
+hl.animation({ leaf = "zoomFactor",           enabled = true, speed = 1.80,  bezier = "linear" })

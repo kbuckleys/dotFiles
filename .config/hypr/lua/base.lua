@@ -19,12 +19,6 @@ hl.env("HYPRCURSOR_SIZE", "6")
 hl.env("XCURSOR_SIZE", "6")
 
 hl.config({
-	cursor = {
-		zoom_factor = 0,
-		zoom_rigid = false,
-		zoom_detached_camera = false,
-		zoom_disable_aa = false,
-	},
 	render = {
 		expand_undersized_textures = false,
 	},
