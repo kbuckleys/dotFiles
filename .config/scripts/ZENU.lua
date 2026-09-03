@@ -238,20 +238,28 @@ end
 -- dependencies
 
 local DEPS = {
-  { pkg = "fzf",            bin = "fzf",      why = "the interface itself" },
-  { pkg = "gawk",           bin = "gawk",     why = "the list formatter" },
-  { pkg = "expac",          bin = "expac",    why = "package size columns" },
-  { pkg = "pacman-contrib", bin = "paccache", why = "cache maintenance" },
+  { pkg = "fzf",                     bin = "fzf",      why = "the interface itself" },
+  { pkg = "gawk",                    bin = "gawk",     why = "the list formatter" },
+  { pkg = "expac",                   bin = "expac",    why = "package size columns" },
+  { pkg = "pacman-contrib",          bin = "paccache", why = "cache maintenance" },
+  { pkg = "ttf-jetbrains-mono-nerd",                   why = "the icons and separators" },
 }
 
 local function have(bin)
   return sh("command -v " .. shq(bin) .. " >/dev/null 2>&1")
 end
 
+-- Font packages ship no binary, so `command -v` cannot see them. An entry
+-- without a `bin` is checked against the package database instead.
+local function dep_present(d)
+  if d.bin then return have(d.bin) end
+  return sh("pacman -Qq " .. shq(d.pkg) .. " >/dev/null 2>&1")
+end
+
 local function ensure_deps()
   local missing = {}
   for _, d in ipairs(DEPS) do
-    if not have(d.bin) then missing[#missing + 1] = d end
+    if not dep_present(d) then missing[#missing + 1] = d end
   end
   if #missing == 0 then return end
 
@@ -263,7 +271,7 @@ local function ensure_deps()
   print("  ZENU needs a few packages that aren't installed yet:")
   print("")
   for _, d in ipairs(missing) do
-    print(string.format("    %-16s %s", d.pkg, d.why))
+    print(string.format("    %-24s %s", d.pkg, d.why))
   end
   print("")
   sh("sudo pacman -S --needed --noconfirm " .. table.concat(names, " "))
@@ -273,7 +281,7 @@ local function ensure_deps()
   -- than left to surface as a run of empty selections.
   local still = {}
   for _, d in ipairs(missing) do
-    if not have(d.bin) then still[#still + 1] = d.pkg end
+    if not dep_present(d) then still[#still + 1] = d.pkg end
   end
   if #still > 0 then
     print("")
