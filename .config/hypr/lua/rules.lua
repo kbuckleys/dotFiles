@@ -6,7 +6,7 @@
 hl.window_rule({ match = { class = "org.quickshell", title = "terminus" },         float = true, size = { 1000, 1000 }})
 hl.window_rule({ match = { class = "org.quickshell", title = "terminus-picker" },  float = true, size = { 1000, 450 }})
 hl.window_rule({ match = { class = "steam", title = "Steam Settings" },         float = true })
-hl.window_rule({ match = { class = "footclient", title = "runner" },            float = true, size = { 1000, 1000 }})
+hl.window_rule({ match = { class = "footclient", title = "cynosure" },            float = true, size = { 1000, 1000 }})
 hl.window_rule({ match = { class = "footclient",title = "sysmon" },             float = true, size = { 1000, 1100 }})
 hl.window_rule({ match = { class = "footclient",title = "ZENU" },               float = true, size = { 1000, 1100 }})
 hl.window_rule({ match = { class = "swayimg" },                                 float = true })
