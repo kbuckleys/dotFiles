@@ -1,0 +1,5 @@
+[filechooser]
+cmd=/home/buck/.config/xdg-desktop-portal-termfilechooser/janus-wrapper.sh
+default_dir=$HOME
+open_mode=suggested
+save_mode=suggested
