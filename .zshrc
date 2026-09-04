@@ -104,3 +104,15 @@ function zvm_after_init() {
   
   zvm_highlight update
 }
+
+# Report cwd to the terminal (OSC-7) so new foot windows (ctrl+shift+n) open here
+function osc7 {
+  local LC_ALL=C
+  setopt localoptions extendedglob
+  local input=( ${(s::)PWD} )
+  local uri=${(j::)input/(#b)([^A-Za-z0-9_.\!~*\'\(\)-\/])/%${(l:2::0:)$(([##16]#match))}}
+  print -n "\e]7;file://${HOST}${uri}\e\\"
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook -Uz chpwd osc7
+osc7
