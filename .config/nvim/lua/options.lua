@@ -46,25 +46,37 @@ vim.opt.signcolumn = "yes"
 
 vim.opt.cmdheight = 0
 
+-- Neovim's default guicursor carries no blink timings, so it asks the terminal
+-- for a *steady* cursor and kitty's cursor_blink_interval never gets to pulse.
+-- Naming the timings opts in; kitty owns the actual rhythm and easing.
+vim.opt.guicursor = "n-v-c-sm:block,i-ci-ve:ver25,r-cr-o:hor20,"
+  .. "a:blinkwait700-blinkoff400-blinkon250"
+
 require("yazi").setup({
   yazi_floating_window_border = "single"
 })
 
--- Command bar pushes the Statusline upwards instead of overlapping it
-require('vim._core.ui2').enable({
-  enable = true,
-  msg = {
-    targets = {
-      [''] = 'msg',
-      bufwrite = 'msg',
-      echo = 'msg',
-      echomsg = 'msg'
-    },
+-- Command bar pushes the Statusline upwards instead of overlapping it.
+-- vim._core.ui2 is a private API: guarded so that if a future nvim renames or
+-- drops it, this degrades to the stock cmdline instead of throwing and taking
+-- the rest of this file -- and everything init.lua requires after it -- down.
+local ok_ui2, ui2 = pcall(require, 'vim._core.ui2')
+if ok_ui2 then
+  ui2.enable({
+    enable = true,
     msg = {
-      timeout = 5000
+      targets = {
+        [''] = 'msg',
+        bufwrite = 'msg',
+        echo = 'msg',
+        echomsg = 'msg'
+      },
+      msg = {
+        timeout = 5000
+      }
     }
-  }
-})
+  })
+end
 
 -- Highlight yanked text
 vim.api.nvim_create_autocmd("TextYankPost", {

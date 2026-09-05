@@ -199,8 +199,7 @@ function M.history()
   end
 
   local tmpfile = vim.fn.tempname()
-  local input = table.concat(display, "\n")
-  vim.fn.writefile(vim.split(input, "\n"), tmpfile)
+  vim.fn.writefile(display, tmpfile)
 
   local width = math.min(100, vim.o.columns - 4)
   local height = math.floor(vim.o.lines * 0.6)
