@@ -4,7 +4,7 @@
 -- https://github.com/kbuckleys/
 
 -- DEFAULTS
-local term = "footclient"
+local term = "kitty"
 local web = "firefox"
 
 -- MISC
