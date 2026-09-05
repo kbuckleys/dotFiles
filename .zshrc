@@ -29,11 +29,21 @@ zinit ice depth=1; zinit light romkatv/powerlevel10k
 
 # Add in zsh plugins
 # NOTE: zsh-vi-mode is added here to enable Vim motions
-zinit light zsh-users/zsh-syntax-highlighting
 zinit light zsh-users/zsh-autosuggestions
 zinit light zsh-users/zsh-completions
 zinit light Aloxaf/fzf-tab
 zinit light jeffreytse/zsh-vi-mode
+# Must stay last: zsh-syntax-highlighting wraps the ZLE widgets that exist when
+# it is sourced, so anything loaded after it goes unhighlighted.
+zinit light zsh-users/zsh-syntax-highlighting
+
+# zsh-vi-mode defaults to the *steady* cursor shapes (\e[6 q insert, \e[2 q
+# normal). A steady DECSCUSR overrides kitty's cursor_blink_interval, which is
+# what suppresses the pulse; the blinking variants hand the rhythm back to the
+# terminal. Set here rather than in zvm_after_init so the very first prompt
+# already has it.
+ZVM_INSERT_MODE_CURSOR=$ZVM_CURSOR_BLINKING_BEAM
+ZVM_NORMAL_MODE_CURSOR=$ZVM_CURSOR_BLINKING_BLOCK
 
 # Add in snippets
 zinit snippet OMZP::command-not-found
@@ -53,11 +63,6 @@ zinit cdreplay -q
 
 # 3. Powerlevel10k config (Must be after plugins)
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-
-# Restore history search (Vi mode sometimes unbinds these)
-bindkey '^p' history-search-backward
-bindkey '^n' history-search-forward
-bindkey '^[w' kill-region
 
 # History
 HISTFILE=~/.zsh_history
@@ -98,6 +103,13 @@ function zvm_after_init() {
   bindkey -M viins '^T' fzf-file-widget
   bindkey -M viins '\ec' fzf-cd-widget
 
+  # Vi mode unbinds these on init. It initialises from a precmd, i.e. after
+  # .zshrc has finished, so binding them at top level does not survive — they
+  # have to be (re)bound here.
+  bindkey '^p' history-search-backward
+  bindkey '^n' history-search-forward
+  bindkey '^[w' kill-region
+
   export ZVM_VI_HIGHLIGHT_BACKGROUND=#c8a4e0
   export ZVM_VI_HIGHLIGHT_FOREGROUND=#000000
   export ZVM_VI_HIGHLIGHT_EXTRASTYLE=bold
@@ -105,14 +117,7 @@ function zvm_after_init() {
   zvm_highlight update
 }
 
-# Report cwd to the terminal (OSC-7) so new foot windows (ctrl+shift+n) open here
-function osc7 {
-  local LC_ALL=C
-  setopt localoptions extendedglob
-  local input=( ${(s::)PWD} )
-  local uri=${(j::)input/(#b)([^A-Za-z0-9_.\!~*\'\(\)-\/])/%${(l:2::0:)$(([##16]#match))}}
-  print -n "\e]7;file://${HOST}${uri}\e\\"
-}
-autoload -Uz add-zsh-hook
-add-zsh-hook -Uz chpwd osc7
-osc7
+# NOTE: cwd reporting (OSC-7) used to be hand-rolled here for foot. kitty's
+# shell integration registers _ksi_report_pwd on chpwd and every prompt unless
+# shell_integration is set to no-cwd, so it is handled. If a terminal without
+# shell integration ever comes back, this is what needs restoring.
