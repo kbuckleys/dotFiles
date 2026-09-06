@@ -13,8 +13,8 @@ hl.window_rule({ match = { class = "swayimg" },                                 
 hl.window_rule({ match = { class = "mpv" },                                     float = true })
 
 -- BORDERS
-hl.window_rule({ match = { fullscreen = true },  border_color = "#fab38799", border_size = 2, rounding = 5 })
-hl.window_rule({ match = { float = true },       border_color = "#b6e0a499", border_size = 2, rounding = 5 })
+hl.window_rule({ match = { fullscreen = true },  border_color = "#fab38799", border_size = 1, rounding = 5 })
+hl.window_rule({ match = { float = true },       border_color = "#A3A9BD99", border_size = 1, rounding = 5 })
 
 -- DISABLE SHADOWS FOR TILES
 hl.window_rule({ match = { float = false }, no_shadow = true })
