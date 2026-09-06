@@ -13,8 +13,8 @@ hl.env("__GL_SHADER_DISK_CACHE_SIZE", "21474836480")
 hl.env("__GL_SHADER_DISK_CACHE_SKIP_CLEANUP", "1")
 
 -- CURSOR
-hl.env("HYPRCURSOR_THEME", "GoogleDot-Black")
-hl.env("XCURSOR_THEME", "GoogleDot-Black")
+hl.env("HYPRCURSOR_THEME", "cz-Viator-Black-Hourglass")
+hl.env("XCURSOR_THEME", "cz-Viator-Black-Hourglass")
 hl.env("HYPRCURSOR_SIZE", "6")
 hl.env("XCURSOR_SIZE", "6")
 
